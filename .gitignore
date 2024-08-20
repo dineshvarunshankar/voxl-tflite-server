@@ -1,5 +1,7 @@
 .bash_history
-build
+build/
+.vim/
+.viminfo
 build32
 build64
 *.ipk
@@ -13,3 +15,9 @@ demo_scripts
 .gitconfig
 .clang*
 compile_commands.json
+.cache
+.DS_Store
+CMakeFiles/
+.local/
+.python_history
+Makefile
