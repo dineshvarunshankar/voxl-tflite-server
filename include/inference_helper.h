@@ -56,7 +56,9 @@ class InferenceHelper
         ~InferenceHelper();
 
         // pre-processing funcs, gets necessary params from loaded model
+        // a separate one was created for yolov8 due to addtinional preprocessing required
         bool preprocess_image(camera_image_metadata_t &meta, char* frame, cv::Mat &preprocessed_image, cv::Mat &output_image);
+        bool preprocess_image_yolov8(camera_image_metadata_t &meta, char *frame, cv::Mat &preprocessed_image, cv::Mat &output_image);
 
         // generic run_inference, requires input from preprocess_image() above
         bool run_inference(cv::Mat preprocessed_image, double* last_inference_time);

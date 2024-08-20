@@ -312,6 +312,127 @@ InferenceHelper::InferenceHelper(char *model_file, char *labels_file,
     model_channels = dims->data[3];
 }
 
+bool InferenceHelper::preprocess_image_yolov8(camera_image_metadata_t &meta,
+                                              char *frame, cv::Mat &preprocessed_image,
+                                              cv::Mat &output_image)
+{
+    start_time = rc_nanos_monotonic_time();
+    num_frames_processed++;
+
+    if (num_frames_processed == 1)
+    {
+        mcv_init_resize_map(meta.width, meta.height, model_width, model_height,
+                            &map);
+        input_height = meta.height;
+        input_width = meta.width;
+
+        if (meta.format == IMAGE_FORMAT_RAW8)
+        {
+            resize_output =
+                (uint8_t *)malloc(model_height * model_width * sizeof(uint8_t));
+        }
+        else
+        {
+            resize_output = (uint8_t *)malloc(model_height * model_width *
+                                              sizeof(uint8_t) * 3);
+        }
+        return false;
+    }
+    // if color input provided, make sure that is reflected in output image
+    switch (meta.format)
+    {
+    case IMAGE_FORMAT_STEREO_NV12:
+        meta.format = IMAGE_FORMAT_NV12;
+    case IMAGE_FORMAT_NV12:
+    {
+        cv::Mat yuv(input_height + input_height / 2, input_width, CV_8UC1,
+                    (uchar *)frame);
+        cv::cvtColor(yuv, output_image, CV_YUV2RGB_NV12);
+        mcv_resize_8uc3_image(output_image.data, resize_output, &map);
+        cv::Mat holder(model_height, model_width, CV_8UC3,
+                       (uchar *)resize_output);
+
+        preprocessed_image = holder;
+        meta.format = IMAGE_FORMAT_RGB;
+        meta.size_bytes = (meta.height * meta.width * 3);
+        meta.stride = (meta.width * 3);
+    }
+    break;
+    case IMAGE_FORMAT_YUV422:
+    {
+        cv::Mat yuv(input_height, input_width, CV_8UC2, (uchar *)frame);
+        cv::cvtColor(yuv, output_image, CV_YUV2RGB_YUYV);
+
+        // Resize to model input dimensions
+        mcv_resize_8uc3_image(output_image.data, resize_output, &map);
+        cv::Mat holder(model_height, model_width, CV_8UC3, (uchar *)resize_output);
+
+        // Assign processed image and update meta data
+        preprocessed_image = holder;
+        meta.format = IMAGE_FORMAT_RGB;
+        meta.size_bytes = (meta.height * meta.width * 3);
+        meta.stride = (meta.width * 3);
+    }
+    break;
+    case IMAGE_FORMAT_STEREO_NV21:
+        meta.format = IMAGE_FORMAT_NV21;
+    case IMAGE_FORMAT_NV21:
+    {
+        cv::Mat yuv(input_height + input_height / 2, input_width, CV_8UC1,
+                    (uchar *)frame);
+        cv::cvtColor(yuv, output_image, CV_YUV2RGB_NV21);
+        mcv_resize_8uc3_image(output_image.data, resize_output, &map);
+        cv::Mat holder(model_height, model_width, CV_8UC3,
+                       (uchar *)resize_output);
+
+        preprocessed_image = holder;
+        meta.format = IMAGE_FORMAT_RGB;
+        meta.size_bytes = (meta.height * meta.width * 3);
+        meta.stride = (meta.width * 3);
+    }
+    break;
+
+    case IMAGE_FORMAT_STEREO_RAW8:
+        meta.format = IMAGE_FORMAT_RAW8;
+    case IMAGE_FORMAT_RAW8:
+    {
+        output_image =
+            cv::Mat(input_height, input_width, CV_8UC1, (uchar *)frame);
+
+        // resize to model input dims
+        mcv_resize_image(output_image.data, resize_output, &map);
+
+        // stack resized input to make "3 channel" grayscale input
+        cv::Mat holder(model_height, model_width, CV_8UC1,
+                       (uchar *)resize_output);
+        cv::Mat in[] = {holder, holder, holder};
+        cv::merge(in, 3, preprocessed_image);
+    }
+    break;
+
+    default:
+        fprintf(stderr,
+                "Unexpected image format %d received! Exiting now.\n",
+                meta.format);
+        return false;
+    }
+
+    // Now assuming the shape of preprocessed_image is (model_height, model_width, 3)
+    // with height and width being 640 each in case of yolov8
+
+    // normalizd values
+    preprocessed_image.convertTo(preprocessed_image, CV_32FC3, 1.0 / 255.0);
+
+    // reshape (640, 640, 3) to (1, 640, 640, 3)
+    preprocessed_image = preprocessed_image.reshape(1, {1, preprocessed_image.rows, preprocessed_image.cols, preprocessed_image.channels()});
+
+    if (en_timing)
+        total_preprocess_time +=
+            ((rc_nanos_monotonic_time() - start_time) / 1000000.);
+
+    return true;
+}
+
 bool InferenceHelper::preprocess_image(camera_image_metadata_t &meta,
                                        char *frame, cv::Mat &preprocessed_image,
                                        cv::Mat &output_image)
@@ -1166,6 +1287,8 @@ bool InferenceHelper::postprocess_yolov8(cv::Mat &output_image, std::vector<ai_d
     dimensions = output_shape->data[1];
     int output_index = interpreter->outputs()[0];
 
+    // Not using the TensorData function since the output is wrapped in a CV Mat and then raw data
+    // is extracted out as a float* directly. Index calculations are performed manually
     float *data = interpreter->typed_tensor<float>(output_index);
 
     cv::Mat temp(dimensions, rows, CV_32F, data); // Wrap with a cv mat to perform tensor reshapes and
@@ -1247,6 +1370,8 @@ bool InferenceHelper::postprocess_yolov8(cv::Mat &output_image, std::vector<ai_d
 
         detections_vector.push_back(curr_detection);
     }
+
+    return true;
 }
 
 void InferenceHelper::print_summary_stats()
