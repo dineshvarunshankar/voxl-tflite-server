@@ -58,6 +58,7 @@ char *coco_labels = (char *)"/usr/bin/dnn/coco_labels.txt";
 char *city_labels = (char *)"/usr/bin/dnn/cityscapes_labels.txt";
 char *imagenet_labels = (char *)"/usr/bin/dnn/imagenet_labels.txt";
 char *yolo_labels = (char *)"/usr/bin/dnn/yolov5_labels.txt";
+// yolov8 has the same labels for the coco dataset
 
 bool en_debug = false;
 bool en_timing = false;
@@ -515,6 +516,11 @@ int main(int argc, char *argv[])
     else if (!strcmp(model, "/usr/bin/dnn/yolov5_float16_quant.tflite"))
     {
         post_type = YOLOV5;
+        do_normalize = HARD_DIVISION;
+        labels_in_use = yolo_labels;
+    }
+    else if (!strcmp(model, "/usr/bin/dnn/yolov8_float16.tflite")) {
+        post_type = YOLOV8;
         do_normalize = HARD_DIVISION;
         labels_in_use = yolo_labels;
     }

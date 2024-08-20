@@ -1302,7 +1302,10 @@ bool InferenceHelper::postprocess_yolov8(cv::Mat &output_image, std::vector<ai_d
 
     // Not using the TensorData function since the output is wrapped in a CV Mat and then raw data
     // is extracted out as a float* directly. Index calculations are performed manually
+
     float *data = interpreter->typed_tensor<float>(output_index);
+    // Unsure of the overhead wrapping with a CV mat might induce, you index calculations can be done
+    // even more manualy for transposing and reshapes, but I dont think the benefits will be tangible
 
     cv::Mat temp(dimensions, rows, CV_32F, data); // Wrap with a cv mat to perform tensor reshapes and
                                                   // and transpose options
