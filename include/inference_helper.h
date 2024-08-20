@@ -28,6 +28,10 @@
 #define MAX_IMAGE_SIZE  12441600            // 4k YUV image size
 #define QUEUE_SIZE      24                  // max messages to be stored in queue
 
+#define MODEL_CONFIDENCE_THRESHOLD_YOLOV8 0.25
+#define MODEL_SCORE_THRESHOLD_YOLOV8 0.45
+#define MODEL_NMS_THRESHOLD_YOLOV8 0.50
+
 struct TFLiteMessage {
     camera_image_metadata_t metadata;       // image metadata information
     uint8_t image_pixels[MAX_IMAGE_SIZE];   // image pixels
@@ -64,9 +68,10 @@ class InferenceHelper
         bool postprocess_classification(cv::Mat &output_image, double last_inference_time, int tensor_offset);
         bool postprocess_posenet(cv::Mat &output_image, double last_inference_time);
         bool postprocess_yolov5(cv::Mat &output_image, std::vector<ai_detection_t>& detections_vector, double last_inference_time);
+        bool postprocess_yolov8(cv::Mat &output_image, std::vector<ai_detection_t> &detections_vector, double last_inference_time, int image_height, int image_width);
 
-        // summary timing stats
-        void print_summary_stats();
+            // summary timing stats
+            void print_summary_stats();
 
         pthread_t               thread;         // model thread handle
         std::mutex              cond_mutex;     // mutex
