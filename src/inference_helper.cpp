@@ -323,6 +323,10 @@ bool InferenceHelper::preprocess_image_yolov8(camera_image_metadata_t &meta,
     {
         mcv_init_resize_map(meta.width, meta.height, model_width, model_height,
                             &map);
+
+
+        // Assuming these are the actual width of the image that gets 
+        // processed and thus using them as image dims           
         input_height = meta.height;
         input_width = meta.width;
 
@@ -1274,7 +1278,7 @@ bool InferenceHelper::postprocess_yolov5(
     return true;
 }
 
-bool InferenceHelper::postprocess_yolov8(cv::Mat &output_image, std::vector<ai_detection_t> &detections_vector, double last_inference_time, int image_height, int image_width)
+bool InferenceHelper::postprocess_yolov8(cv::Mat &output_image, std::vector<ai_detection_t> &detections_vector, double last_inference_time)
 {
     start_time = rc_nanos_monotonic_time();
 
@@ -1336,11 +1340,11 @@ bool InferenceHelper::postprocess_yolov8(cv::Mat &output_image, std::vector<ai_d
             float w = new_data[2];
             float h = new_data[3];
 
-            int left = int((xc - 0.5 * w) * image_width);
-            int top = int((yc - 0.5 * h) * image_height);
+            int left = int((xc - 0.5 * w) * input_width);
+            int top = int((yc - 0.5 * h) * input_height);
 
-            int width = int(w * image_width);
-            int height = int(h * image_height);
+            int width = int(w * input_width);
+            int height = int(h * input_height);
 
             boxes.push_back(cv::Rect(left, top, width, height));
         }
