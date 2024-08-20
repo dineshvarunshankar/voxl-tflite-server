@@ -312,6 +312,15 @@ InferenceHelper::InferenceHelper(char *model_file, char *labels_file,
     model_channels = dims->data[3];
 }
 
+/*
+ Far too much redundant code but copied it out anyway since something could have broken otherwise
+ Ways to fix:   1. Leave it as it is
+                2. Wrap the actual preprocess method and then make changes on top of that (the best one imo)
+                3. Add a flag argument to indicate yolov8 and then write conditionals to executing the reshaping
+                4. Go full object oriented, make the preprocess method a common method in the superclass 
+                   and then have a custom implementation for the yolov8 class which calls the superclass method anyway       
+*/
+
 bool InferenceHelper::preprocess_image_yolov8(camera_image_metadata_t &meta,
                                               char *frame, cv::Mat &preprocessed_image,
                                               cv::Mat &output_image)
