@@ -205,32 +205,74 @@ disable )
 	esac
 done
 
-echo ""
-echo -e "Select a model to use with the tflite-server:\n (1) Mobilenet - object detection\n (2) FastDepth - monocular depth estimation\n (3) Deeplab - cityscapes segmentation\n (4) EfficientNet - image classification\n (5) Posenet - pose estimation\n (6) Yolov5 - object detection\n"
-select opt in "1" "2" "3" "4" "5" "6"; do
-case $opt in
-1 )
-	set_param_string model "/usr/bin/dnn/ssdlite_mobilenet_v2_coco.tflite"
-	break;;
-2 )
-	set_param_string model "/usr/bin/dnn/fastdepth_float16_quant.tflite"
-	break;;
-3 )
-	set_param_string model "/usr/bin/dnn/edgetpu_deeplab_321_os32_float16_quant.tflite"
-	break;;
-4 )
-	set_param_string model "/usr/bin/dnn/lite-model_efficientnet_lite4_uint8_2.tflite"
-	break;;
-5 )
-	set_param_string model "/usr/bin/dnn/lite-model_movenet_singlepose_lightning_tflite_float16_4.tflite"
-	break;;
-6 )
-	set_param_string model "/usr/bin/dnn/yolov5_float16_quant.tflite"
-	break;;
-*)
-	echo "invalid option"
-	esac
+echo " "
+echo -e "Select a model to use with the tflite-server:\n"
+options=("Mobilenet - object detection"
+         "FastDepth - monocular depth estimation"
+         "Deeplab - cityscapes segmentation"
+         "EfficientNet - image classification"
+         "Posenet - pose estimation"
+         "Yolov5 - object detection"
+         "Yolov8 - object detection (coco dataset)"
+         "Yolov8 - object detection (custom)")
+
+PS3="Enter the number corresponding to the model you want to select: "
+
+select opt in "${options[@]}" "Quit"; do
+    case $REPLY in
+        1)
+            set_param_string model "/usr/bin/dnn/ssdlite_mobilenet_v2_coco.tflite"
+			set_param_bool requires_labels true
+			set_param_string labels "/usr/bin/dnn/coco_labels.txt"
+            break;;
+        2)
+            set_param_string model "/usr/bin/dnn/fastdepth_float16_quant.tflite"
+			set_param_bool requires_labels false
+            break;;
+        3)
+            set_param_string model "/usr/bin/dnn/edgetpu_deeplab_321_os32_float16_quant.tflite"
+			set_param_bool requires_labels true
+			set_param_string labels "/usr/bin/dnn/cityscapes_labels.txt"
+            break;;
+        4)
+            set_param_string model "/usr/bin/dnn/lite-model_efficientnet_lite4_uint8_2.tflite"
+			set_param_bool requires_labels true
+			set_param_string labels "/usr/bin/dnn/imagenet_labels.txt"
+            break;;
+        5)
+            set_param_string model "/usr/bin/dnn/lite-model_movenet_singlepose_lightning_tflite_float16_4.tflite"
+			set_param_bool requires_labels false
+            break;;
+        6)
+            set_param_string model "/usr/bin/dnn/yolov5_float16_quant.tflite"
+			set_param_bool requires_labels true
+			set_param_string labels "/usr/bin/dnn/yolov5_labels.txt"
+            break;;
+        7)
+            set_param_string model "/usr/bin/dnn/yolov8_float16.tflite"
+            set_param_string labels "/usr/bin/dnn/yolo_labels"
+            break;;
+        8)
+            # For custom model
+            read -p "Enter the name of the custom YOLOv8 model (.tflite): " custom_model_path
+            read -p "Enter the name the custom labels file(.txt): " custom_labels_file
+
+			custom_model_path="/usr/bin/dnn/$custom_model_file"
+			custom_labels_path="/usr/bin/dnn/$custom_labels_file"
+            set_param_string model "$custom_model_path"
+			set_param_bool true
+            set_param_string labels "$custom_labels_path"
+            break;;
+        [Qq]*)
+            echo "Quitting..."
+            exit 0;;
+        *)
+            echo "Invalid option. Please try again.";;
+    esac
 done
+
+echo "Model selected: $model"
+echo "Labels directory: ${labels:-N/A}"
 
 echo ""
 echo -e "Select an image sensor to use with the tflite-server:\n (1) Hires\n (2) Tracking\n (3) Front Stereo (left cam only)\n (4) Rear Stereo (left cam only)\n"
