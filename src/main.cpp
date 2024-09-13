@@ -462,7 +462,7 @@ int main(int argc, char *argv[])
     else if (!strcmp(delegate, "nnapi"))
         opt_ = NNAPI;
 
-    char *labels_in_use = coco_labels;
+    // char *labels_in_use;
 
     // set postprocess type
     if (!strcmp(model, "/usr/bin/dnn/ssdlite_mobilenet_v2_coco.tflite"))
@@ -486,7 +486,6 @@ int main(int argc, char *argv[])
     {
         post_type = SEGMENTATION;
         do_normalize = NONE;
-        labels_in_use = city_labels;
     }
     else if (!strcmp(model,
                      "/usr/bin/dnn/"
@@ -494,14 +493,12 @@ int main(int argc, char *argv[])
     {
         post_type = CLASSIFICATION;
         do_normalize = PIXEL_MEAN;
-        labels_in_use = imagenet_labels;
     }
     else if (!strcmp(model,
                      "/usr/bin/dnn/mobilenetv1_nnapi_classifier.tflite"))
     {
         post_type = CLASSIFICATION;
         do_normalize = PIXEL_MEAN;
-        labels_in_use = imagenet_labels;
         // mobilenet special for background class!!!
         tensor_offset = 1;
     }
@@ -517,12 +514,10 @@ int main(int argc, char *argv[])
     {
         post_type = YOLOV5;
         do_normalize = HARD_DIVISION;
-        labels_in_use = yolo_labels;
     }
     else if (!strcmp(model, "/usr/bin/dnn/yolov8_float16.tflite")) {
         post_type = YOLOV8;
         do_normalize = HARD_DIVISION;
-        labels_in_use = yolo_labels;
     }
     else
     {

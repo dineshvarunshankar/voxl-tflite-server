@@ -85,6 +85,7 @@ static char input_pipe[CHAR_BUF_SIZE];
 static char delegate[CHAR_BUF_SIZE];
 static bool allow_multiple;
 static char output_pipe_prefix[CHAR_BUF_SIZE];
+static char labels_in_use[CHAR_BUF_SIZE];
 
 static inline void config_file_print(void) {
     printf("=================================================================\n");
@@ -121,7 +122,19 @@ static inline int config_file_read(void) {
     json_fetch_string_with_default(parent, "input_pipe", input_pipe, CHAR_BUF_SIZE, "/run/mpa/hires/");
     json_fetch_string_with_default(parent, "delegate", delegate, CHAR_BUF_SIZE, "gpu");
 
-    #ifdef BUILD_QRB5165
+    int requires_labels = 0;
+    json_fetch_bool_with_default(parent, "requires_labels", &requires_labels, 1);
+
+    if (requires_labels)
+    {
+        json_fetch_string_with_default(parent, "labels", labels_in_use, CHAR_BUF_SIZE, "/usr/bin/dnn/coco_labels.txt");
+    }
+    else
+    {
+        labels_in_use[0] = '\0'; 
+    }
+
+#ifdef BUILD_QRB5165
     json_fetch_bool_with_default(parent, "allow_multiple", (int*)&allow_multiple, 0);
     json_fetch_string_with_default(parent, "output_pipe_prefix", output_pipe_prefix, CHAR_BUF_SIZE, "mobilenet");
     #endif
