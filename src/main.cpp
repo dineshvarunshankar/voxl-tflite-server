@@ -50,7 +50,7 @@
 #define PROCESS_NAME "voxl-tflite-server"
 #define IMAGE_CH 0
 #define DETECTION_CH 1
-#define HIRES_PIPE "/run/mpa/hires/"
+#define HIRES_PIPE "/run/mpa/hires_small_color/"
 #define TFLITE_IMAGE_PATH (MODAL_PIPE_DEFAULT_BASE_DIR "tflite/")
 #define TFLITE_DETECTION_PATH (MODAL_PIPE_DEFAULT_BASE_DIR "tflite_data/")
 
@@ -515,7 +515,7 @@ int main(int argc, char *argv[])
         post_type = YOLOV5;
         do_normalize = HARD_DIVISION;
     }
-    else if (!strcmp(model, "/usr/bin/dnn/yolov8_float16.tflite")) {
+    else if (!strcmp(model, "/usr/bin/dnn/yolov8n_float16.tflite")) {
         post_type = YOLOV8;
         do_normalize = HARD_DIVISION;
     }

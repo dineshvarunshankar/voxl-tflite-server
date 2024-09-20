@@ -237,7 +237,7 @@ echo -e "Select an image sensor to use with the tflite-server:\n (1) Hires\n (2)
 select opt in "1" "2" "3"; do
 case $opt in
 1 )
-    set_param_string input_pipe "/run/mpa/hires/"
+    set_param_string input_pipe "/run/mpa/hires_small_color/"
 	break;;
 2 )
     set_param_string input_pipe "/run/mpa/tracking/"

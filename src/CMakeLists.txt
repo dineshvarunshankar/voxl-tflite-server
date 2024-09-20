@@ -135,6 +135,7 @@ set(LINK_LIBS
     "opencv_highgui"
     "opencv_imgproc"
     "opencv_imgcodecs"
+    "opencv_dnn"
     "gsl"
     "llvm-qcom"
     "adreno_utils"
