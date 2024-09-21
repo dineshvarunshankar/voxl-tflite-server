@@ -234,9 +234,6 @@ static void *inference_worker(void *data)
         int new_format = new_frame->metadata.format;
 
         double last_inference_time = 0;
-        // if (!inf_helper->run_inference(preprocessed_image,
-        //                                &last_inference_time))
-        //     continue;
         if (post_type == YOLOV8)
         {
             if (!inf_helper->run_inference_yolov8(preprocessed_image,
