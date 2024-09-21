@@ -792,7 +792,7 @@ bool InferenceHelper::postprocess_object_detect(
             cv::Point pt(left, top - 10);
 
             cv::rectangle(output_image, rect,
-                           get_color_from_id(detected_classes[i]), 2);
+                          get_color_from_id(detected_classes[i]), 2);
             cv::putText(output_image, labels[detected_classes[i]], pt,
                         cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0), 2);
 
