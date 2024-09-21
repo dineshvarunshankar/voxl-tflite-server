@@ -594,8 +594,6 @@ bool InferenceHelper::run_inference(cv::Mat preprocessed_image,
     // Get input dimension from the input tensor metadata assuming one input
     // only
     int input = interpreter->inputs()[0];
-    printf("value of preprocessed_image rows: %i\n", preprocessed_image.rows);
-    printf("value of preprocessed_image cols: %i\n", preprocessed_image.cols);
 
     // manually fill tensor with image data, specific to input format
     switch (interpreter->tensor(input)->type)
@@ -608,11 +606,9 @@ bool InferenceHelper::run_inference(cv::Mat preprocessed_image,
         const int row_elems = model_width * model_channels;
         for (int row = 0; row < model_height; row++)
         {
-            printf("Value of row: %i\n", row);
             const uchar *row_ptr = preprocessed_image.ptr(row);
             for (int i = 0; i < row_elems; i++)
             {
-                printf("Value of i: %i\n", i);
                 if (do_normalize == HARD_DIVISION)
                     dst[i] = row_ptr[i] / NORMALIZATION_CONST;
                 else if (do_normalize == PIXEL_MEAN)
