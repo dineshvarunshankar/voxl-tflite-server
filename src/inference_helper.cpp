@@ -562,6 +562,30 @@ bool InferenceHelper::preprocess_image(camera_image_metadata_t &meta,
 #define NORMALIZATION_CONST 255.0f
 #define PIXEL_MEAN_GUESS 127.0f
 
+bool InferenceHelper::run_inference_yolov8(cv::Mat preprocessed_image,
+                                           double *last_inference_time)
+{
+    start_time = rc_nanos_monotonic_time();
+    int input = interpreter->inputs()[0];
+    float *input_data = interpreter->typed_tensor<float>(input);
+    //std::memcpy(input_data, preprocessed_image_blob.data, sizeof(float) * model_input_width * model_input_height * model_input_channels);
+    std::memcpy(input_data, preprocessed_image.data, sizeof(float) * 640 * 640 * 3);
+
+    if (interpreter->Invoke() != kTfLiteOk)
+    {
+        std::cerr << "Failed to invoke tflite interpreter." << std::endl;
+        return false;
+    }
+    int64_t end_time = rc_nanos_monotonic_time();
+
+    if (en_timing)
+        total_inference_time += ((end_time - start_time) / 1000000.);
+    if (last_inference_time != nullptr)
+        *last_inference_time = ((double)(end_time - start_time) / 1000000.);
+
+    return true;
+}
+
 bool InferenceHelper::run_inference(cv::Mat preprocessed_image,
                                     double *last_inference_time)
 {
@@ -570,19 +594,25 @@ bool InferenceHelper::run_inference(cv::Mat preprocessed_image,
     // Get input dimension from the input tensor metadata assuming one input
     // only
     int input = interpreter->inputs()[0];
+    printf("value of preprocessed_image rows: %i\n", preprocessed_image.rows);
+    printf("value of preprocessed_image cols: %i\n", preprocessed_image.cols);
 
     // manually fill tensor with image data, specific to input format
     switch (interpreter->tensor(input)->type)
     {
     case kTfLiteFloat32:
     {
-        float *dst = TensorData<float>(interpreter->tensor(input), 0);
+        //float *dst = TensorData<float>(interpreter->tensor(input), 0);
+        float *dst = interpreter->typed_tensor<float>(input);
+        std::memcpy(dst, preprocessed_image.data, sizeof(float) * 640 * 640 * 3);
         const int row_elems = model_width * model_channels;
         for (int row = 0; row < model_height; row++)
         {
+            printf("Value of row: %i\n", row);
             const uchar *row_ptr = preprocessed_image.ptr(row);
             for (int i = 0; i < row_elems; i++)
             {
+                printf("Value of i: %i\n", i);
                 if (do_normalize == HARD_DIVISION)
                     dst[i] = row_ptr[i] / NORMALIZATION_CONST;
                 else if (do_normalize == PIXEL_MEAN)
@@ -759,7 +789,7 @@ bool InferenceHelper::postprocess_object_detect(
             if (en_debug)
             {
                 printf("Detected: %s, Confidence: %6.2f\n",
-                       labels[detected_classes[i]].c_str(), (double)score);
+                        labels[detected_classes[i]].c_str(), (double)score);
             }
             int height = bottom - top;
             int width = right - left;
@@ -768,7 +798,7 @@ bool InferenceHelper::postprocess_object_detect(
             cv::Point pt(left, top - 10);
 
             cv::rectangle(output_image, rect,
-                          get_color_from_id(detected_classes[i]), 2);
+                            get_color_from_id(detected_classes[i]), 2);
             cv::putText(output_image, labels[detected_classes[i]], pt,
                         cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0), 2);
 
@@ -1371,6 +1401,12 @@ bool InferenceHelper::postprocess_yolov8(cv::Mat &output_image, std::vector<ai_d
 
         int idx = nms_result[i];
 
+        cv::putText(output_image, labels[class_ids[idx]],
+                    cv::Point(boxes[idx].x, boxes[idx].y), cv::FONT_HERSHEY_SIMPLEX, 0.8,
+                    cv::Scalar(0), 2);
+        cv::rectangle(output_image, cv::Rect(boxes[idx].x, boxes[idx].y, boxes[idx].x + boxes[idx].width, boxes[idx].y + boxes[idx].height),
+                      get_color_from_id(class_ids[idx]), 2);
+
         ai_detection_t curr_detection;
         curr_detection.magic_number = AI_DETECTION_MAGIC_NUMBER;
         curr_detection.timestamp_ns = rc_nanos_monotonic_time();
@@ -1379,6 +1415,15 @@ bool InferenceHelper::postprocess_yolov8(cv::Mat &output_image, std::vector<ai_d
         curr_detection.frame_id = num_frames_processed;
         curr_detection.detection_confidence = -1.0; // detection confidence is not a thing for yolov8
 
+        std::string class_holder = labels[class_ids[idx]].substr(
+            labels[class_ids[idx]].find(" ") + 1);
+        class_holder.erase(
+            remove_if(class_holder.begin(), class_holder.end(), isspace),
+            class_holder.end());
+        strcpy(curr_detection.class_name, class_holder.c_str());
+
+        strcpy(curr_detection.cam, cam_name.c_str());
+
         curr_detection.x_min = boxes[idx].x;
         curr_detection.y_min = boxes[idx].y;
         curr_detection.x_max = boxes[idx].x + boxes[idx].width;
@@ -1386,6 +1431,9 @@ bool InferenceHelper::postprocess_yolov8(cv::Mat &output_image, std::vector<ai_d
 
         detections_vector.push_back(curr_detection);
     }
+
+    draw_fps(output_image, last_inference_time, cv::Point(0, 0), 0.5, 2,
+             cv::Scalar(0, 0, 0), cv::Scalar(180, 180, 180), true);
 
     return true;
 }

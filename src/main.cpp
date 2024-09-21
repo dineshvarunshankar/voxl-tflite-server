@@ -234,9 +234,21 @@ static void *inference_worker(void *data)
         int new_format = new_frame->metadata.format;
 
         double last_inference_time = 0;
-        if (!inf_helper->run_inference(preprocessed_image,
-                                       &last_inference_time))
-            continue;
+        // if (!inf_helper->run_inference(preprocessed_image,
+        //                                &last_inference_time))
+        //     continue;
+        if (post_type == YOLOV8)
+        {
+            if (!inf_helper->run_inference_yolov8(preprocessed_image,
+                                           &last_inference_time))
+                continue;
+        }
+        else
+        {
+            if (!inf_helper->run_inference(preprocessed_image,
+                                           &last_inference_time))
+                continue;
+        }
 
         new_frame->metadata.format = new_format;
         if (post_type == OBJECT_DETECT)
@@ -333,6 +345,9 @@ static void *inference_worker(void *data)
                                       sizeof(ai_detection_t));
                 }
             }
+            new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
+            pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata,
+                                           (char *)output_image.data);
         }
     }
 
@@ -573,7 +588,7 @@ int main(int argc, char *argv[])
             "tflite", TFLITE_IMAGE_PATH, "camera_image_metadata_t",
             PROCESS_NAME, 16 * 1024 * 1024, 0};
         pipe_server_create(IMAGE_CH, image_pipe, 0);
-        if (post_type == OBJECT_DETECT || post_type == YOLOV5)
+        if (post_type == OBJECT_DETECT || post_type == YOLOV5 || post_type == YOLOV8)
         {
             pipe_info_t detection_pipe = {
                 "tflite_data", TFLITE_DETECTION_PATH,
@@ -601,7 +616,7 @@ int main(int argc, char *argv[])
         // create the server pipe
         pipe_server_create(IMAGE_CH, image_pipe, 0);
 
-        if (post_type == OBJECT_DETECT || post_type == YOLOV5)
+        if (post_type == OBJECT_DETECT || post_type == YOLOV5 || post_type == YOLOV8)
         {
             // initialize the detection pipe only if we are running a detection
             // model

@@ -71,6 +71,7 @@ class InferenceHelper
         bool postprocess_posenet(cv::Mat &output_image, double last_inference_time);
         bool postprocess_yolov5(cv::Mat &output_image, std::vector<ai_detection_t>& detections_vector, double last_inference_time);
         bool postprocess_yolov8(cv::Mat &output_image, std::vector<ai_detection_t> &detections_vector, double last_inference_time);
+        bool run_inference_yolov8(cv::Mat preprocessed_image, double *last_inference_time);
 
             // summary timing stats
             void print_summary_stats();

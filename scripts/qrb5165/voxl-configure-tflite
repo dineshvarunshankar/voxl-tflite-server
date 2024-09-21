@@ -250,7 +250,7 @@ select opt in "${options[@]}" "Quit"; do
             break;;
         7)
             set_param_string model "/usr/bin/dnn/yolov8n_float16.tflite"
-            set_param_string labels "/usr/bin/dnn/yolo_labels"
+            set_param_string labels "/usr/bin/dnn/yolov5_labels.txt"
             break;;
         8)
             # For custom model
