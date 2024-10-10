@@ -1,5 +1,6 @@
 0.3.5
     * Fix config file default camera pipe name (hires_small_color)
+    * yolov8 support
 0.3.4
     * Allow YUV422 formatted images to be piped into tflite
 0.3.3
