@@ -317,8 +317,8 @@ InferenceHelper::InferenceHelper(char *model_file, char *labels_file,
  Ways to fix:   1. Leave it as it is
                 2. Wrap the actual preprocess method and then make changes on top of that (the best one imo)
                 3. Add a flag argument to indicate yolov8 and then write conditionals to executing the reshaping
-                4. Go full object oriented, make the preprocess method a common method in the superclass 
-                   and then have a custom implementation for the yolov8 class which calls the superclass method anyway       
+                4. Go full object oriented, make the preprocess method a common method in the superclass
+                   and then have a custom implementation for the yolov8 class which calls the superclass method anyway
 */
 
 bool InferenceHelper::preprocess_image_yolov8(camera_image_metadata_t &meta,
@@ -333,9 +333,8 @@ bool InferenceHelper::preprocess_image_yolov8(camera_image_metadata_t &meta,
         mcv_init_resize_map(meta.width, meta.height, model_width, model_height,
                             &map);
 
-
-        // Assuming these are the actual width of the image that gets 
-        // processed and thus using them as image dims           
+        // Assuming these are the actual width of the image that gets
+        // processed and thus using them as image dims
         input_height = meta.height;
         input_width = meta.width;
 
@@ -568,7 +567,7 @@ bool InferenceHelper::run_inference_yolov8(cv::Mat preprocessed_image,
     start_time = rc_nanos_monotonic_time();
     int input = interpreter->inputs()[0];
     float *input_data = interpreter->typed_tensor<float>(input);
-    //std::memcpy(input_data, preprocessed_image_blob.data, sizeof(float) * model_input_width * model_input_height * model_input_channels);
+    // std::memcpy(input_data, preprocessed_image_blob.data, sizeof(float) * model_input_width * model_input_height * model_input_channels);
     std::memcpy(input_data, preprocessed_image.data, sizeof(float) * 640 * 640 * 3);
 
     if (interpreter->Invoke() != kTfLiteOk)

@@ -46,6 +46,7 @@
 
 #include "config_file.h"
 #include "inference_helper.h"
+#include "utils.h"
 
 #define PROCESS_NAME "voxl-tflite-server"
 #define IMAGE_CH 0
@@ -76,77 +77,13 @@ enum PostProcessType
     YOLOV5,
     YOLOV8
 };
+
 PostProcessType post_type;
 
 // offset for classification models only (as of now), used for addressing same
 // tensor data with varied offsets i.e. efficient net has 0 offset [0,1000],
 // mobilenetv1 has +1 offset [1, 1001], etc...
 static int tensor_offset = 0;
-
-void _print_usage()
-{
-    printf("\nCommand line arguments are as follows:\n\n");
-    printf(
-        "-c, --config    : load the config file only, for use by the config "
-        "wizard\n");
-    printf("-d, --debug     : enable verbose debug output (Default: Off)\n");
-    printf(
-        "-t, --timing    : enable timing output for model operations (Default: "
-        "Off)\n");
-    printf("-h              : Print this help message\n");
-}
-
-static bool _parse_opts(int argc, char *argv[])
-{
-    static struct option long_options[] = {{"config", no_argument, 0, 'm'},
-                                           {"debug", no_argument, 0, 'c'},
-                                           {"timing", no_argument, 0, 't'},
-                                           {"help", no_argument, 0, 'h'},
-                                           {0, 0, 0}};
-
-    while (1)
-    {
-        int option_index = 0;
-        int c = getopt_long(argc, argv, "cdtph", long_options, &option_index);
-
-        if (c == -1)
-            break; // Detect the end of the options.
-
-        switch (c)
-        {
-        case 0:
-            // for long args without short equivalent that just set a flag
-            // nothing left to do so just break.
-            if (long_options[option_index].flag != 0)
-                break;
-            break;
-
-        case 'c':
-            config_file_read();
-            exit(0);
-
-        case 'd':
-            printf("Enabling debug mode\n");
-            en_debug = true;
-            break;
-
-        case 't':
-            printf("Enabling timing mode\n");
-            en_timing = true;
-            break;
-
-        case 'h':
-            _print_usage();
-            return true;
-
-        default:
-            // Print the usage if there is an incorrect command line option
-            _print_usage();
-            return true;
-        }
-    }
-    return false;
-}
 
 // timing helper
 uint64_t rc_nanos_monotonic_time()
@@ -419,7 +356,7 @@ static void _camera_helper_cb(__attribute__((unused)) int ch,
 
 int main(int argc, char *argv[])
 {
-    if (_parse_opts(argc, argv))
+    if (_parse_opts(argc, argv, &en_debug, &en_timing))
     {
         return -1;
     }
