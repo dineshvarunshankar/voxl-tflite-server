@@ -81,8 +81,9 @@ void *inference_worker(void *args)
         switch (model_name)
         {
         case OBJECT_DETECT_MODEL:
+        {
             std::vector<ai_detection_t> detections;
-            auto params = std::make_unique<ObjectDetectionParams>(detections, last_inference_time);
+            auto params = std::make_unique<ObjectDetectionParams>(detections);
             if (!model_helper->postprocess(output_image, last_inference_time, params.get()))
                 continue;
 
@@ -100,9 +101,17 @@ void *inference_worker(void *args)
 
             break;
         }
+
+        default:
+        {
+            // Handle unsupported model types or an error case
+            fprintf(stderr, "Error: Unsupported model type.\n");
+            break;
+        }
+        }
     }
 
-    delete args;
+    delete worker_args;
     return nullptr;
 }
 

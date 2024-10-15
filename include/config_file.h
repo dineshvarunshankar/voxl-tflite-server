@@ -35,6 +35,7 @@
 #define CONFIG_FILE_H
 
 #include <modal_json.h>
+#include <stdio.h>
 
 #define CHAR_BUF_SIZE 128
 #define CONFIG_FILE "/etc/modalai/voxl-tflite-server.conf"
@@ -79,13 +80,13 @@
  */\n"
 #endif
 
-static int skip_n_frames;
 static char model[CHAR_BUF_SIZE];
 static char input_pipe[CHAR_BUF_SIZE];
 static char delegate[CHAR_BUF_SIZE];
-static bool allow_multiple;
-static char output_pipe_prefix[CHAR_BUF_SIZE];
-static char labels_in_use[CHAR_BUF_SIZE];
+int skip_n_frames;
+bool allow_multiple;
+char output_pipe_prefix[CHAR_BUF_SIZE];
+char labels_in_use[CHAR_BUF_SIZE];
 
 static inline void config_file_print(void) {
     printf("=================================================================\n");

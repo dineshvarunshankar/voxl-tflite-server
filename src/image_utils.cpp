@@ -48,7 +48,7 @@ void draw_text(cv::Mat &mat, const std::string &text, cv::Point pos,
 static void draw_fps(cv::Mat &mat, double time_inference, cv::Point pos,
                      double font_scale, int32_t thickness,
                      cv::Scalar color_front, cv::Scalar color_back,
-                     bool is_text_on_rect = true)
+                     bool is_text_on_rect)
 {
     char text[64];
     static auto time_previous = std::chrono::steady_clock::now();

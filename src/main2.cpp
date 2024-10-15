@@ -87,6 +87,7 @@ static void _camera_helper_cb(__attribute__((unused)) int ch,
         model_helper->print_summary_stats();
 
     return;
+    
 }
 
 int main(int argc, char *argv[])
