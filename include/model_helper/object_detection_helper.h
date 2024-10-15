@@ -15,8 +15,7 @@ public:
                          DelegateOpt delegate_choice, bool _en_debug,
                          bool _en_timing, NormalizationType _do_normalize);
 
-    // Virtual function override for post-processing
-    bool postprocess(cv::Mat &output_image, void* input_params) override;
+    bool postprocess(cv::Mat &output_image, double last_inference_time, void* input_params) override;
 };
 
 #endif // OBJECT_DETECTION_HELPER_H

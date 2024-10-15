@@ -70,9 +70,9 @@ InferenceHelper *inf_helper;
 enum PostProcessType
 {
     OBJECT_DETECT,
-    MONO_DEPTH,
-    SEGMENTATION,
-    CLASSIFICATION,
+    MONO_DEPTH_MODEL,
+    SEGMENTATION_MODEL,
+    CLASSIFICATION_MODEL,
     POSENET,
     YOLOV5,
     YOLOV8
@@ -84,14 +84,6 @@ PostProcessType post_type;
 // tensor data with varied offsets i.e. efficient net has 0 offset [0,1000],
 // mobilenetv1 has +1 offset [1, 1001], etc...
 static int tensor_offset = 0;
-
-// timing helper
-uint64_t rc_nanos_monotonic_time()
-{
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ((uint64_t)ts.tv_sec * 1000000000) + ts.tv_nsec;
-}
 
 static void *inference_worker(void *data)
 {
@@ -174,7 +166,7 @@ static void *inference_worker(void *data)
         if (post_type == YOLOV8)
         {
             if (!inf_helper->run_inference_yolov8(preprocessed_image,
-                                           &last_inference_time))
+                                                  &last_inference_time))
                 continue;
         }
         else
@@ -204,7 +196,7 @@ static void *inference_worker(void *data)
             pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata,
                                            (char *)output_image.data);
         }
-        else if (post_type == MONO_DEPTH)
+        else if (post_type == MONO_DEPTH_MODEL)
         {
             if (!inf_helper->postprocess_mono_depth(
                     new_frame->metadata, output_image, last_inference_time))
@@ -213,7 +205,7 @@ static void *inference_worker(void *data)
             pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata,
                                            (char *)output_image.data);
         }
-        else if (post_type == SEGMENTATION)
+        else if (post_type == SEGMENTATION_MODEL)
         {
             // Segmentation is a special case here
             // instead of passing the full dimension "output_image", we pass the
@@ -227,7 +219,7 @@ static void *inference_worker(void *data)
             pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata,
                                            (char *)preprocessed_image.data);
         }
-        else if (post_type == CLASSIFICATION)
+        else if (post_type == CLASSIFICATION_MODEL)
         {
             if (!inf_helper->postprocess_classification(
                     output_image, last_inference_time, tensor_offset))
@@ -426,27 +418,27 @@ int main(int argc, char *argv[])
     }
     else if (!strcmp(model, "/usr/bin/dnn/fastdepth_float16_quant.tflite"))
     {
-        post_type = MONO_DEPTH;
+        post_type = MONO_DEPTH_MODEL;
         do_normalize = HARD_DIVISION;
     }
     else if (!strcmp(model,
                      "/usr/bin/dnn/"
                      "edgetpu_deeplab_321_os32_float16_quant.tflite"))
     {
-        post_type = SEGMENTATION;
+        post_type = SEGMENTATION_MODEL;
         do_normalize = NONE;
     }
     else if (!strcmp(model,
                      "/usr/bin/dnn/"
                      "lite-model_efficientnet_lite4_uint8_2.tflite"))
     {
-        post_type = CLASSIFICATION;
+        post_type = CLASSIFICATION_MODEL;
         do_normalize = PIXEL_MEAN;
     }
     else if (!strcmp(model,
                      "/usr/bin/dnn/mobilenetv1_nnapi_classifier.tflite"))
     {
-        post_type = CLASSIFICATION;
+        post_type = CLASSIFICATION_MODEL;
         do_normalize = PIXEL_MEAN;
         // mobilenet special for background class!!!
         tensor_offset = 1;
@@ -464,7 +456,8 @@ int main(int argc, char *argv[])
         post_type = YOLOV5;
         do_normalize = HARD_DIVISION;
     }
-    else if (!strcmp(model, "/usr/bin/dnn/yolov8n_float16.tflite")) {
+    else if (!strcmp(model, "/usr/bin/dnn/yolov8n_float16.tflite"))
+    {
         post_type = YOLOV8;
         do_normalize = HARD_DIVISION;
     }

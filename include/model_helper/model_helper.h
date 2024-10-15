@@ -22,9 +22,13 @@
 #include "resize.h"
 
 #include "config_file.h"
+#include "tensor_data.h"
 
 #define MAX_IMAGE_SIZE 12441600
 #define QUEUE_SIZE 24 // max messages to be stored in queue
+
+#define NORMALIZATION_CONST 255.0f
+#define PIXEL_MEAN_GUESS 127.0f
 
 enum DelegateOpt
 {
@@ -50,6 +54,39 @@ struct TFLiteCamQueue
 {
     TFLiteMessage queue[QUEUE_SIZE]; // camera frame queue
     int insert_idx = 0;              // next element insert location (between 0 - QUEUE_SIZE)
+};
+
+// ModelName refers to the name of the model
+// Any name with *_MODEL is a generic for that model category
+// (as defined in the map)
+enum ModelName
+{
+    OBJECT_DETECT_MODEL,
+    MONO_DEPTH_MODEL,
+    SEGMENTATION_MODEL,
+    CLASSIFICATION_MODEL,
+    POSENET,
+    YOLOV5,
+    YOLOV8
+};
+
+enum ModelCategory
+{
+    OBJECT_DETECTION,
+    CLASSIFICATION,
+    SEGMENTATION,
+    MONO_DEPTH,
+    POSE
+};
+
+std::map<ModelName, ModelCategory> model_category_map = {
+    {YOLOV5, OBJECT_DETECTION},
+    {YOLOV8, OBJECT_DETECTION},
+    {OBJECT_DETECT_MODEL, OBJECT_DETECTION},
+    {CLASSIFICATION_MODEL, CLASSIFICATION},
+    {SEGMENTATION_MODEL, SEGMENTATION},
+    {POSENET, POSE},
+    {MONO_DEPTH_MODEL, MONO_DEPTH}
 };
 
 class ModelHelper
@@ -110,7 +147,11 @@ public:
                                   char *frame, cv::Mat &preprocessed_image,
                                   cv::Mat &output_image);
 
-    virtual bool postprocess(cv::Mat &output_image, void *input_params) = 0;
+    virtual bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params);
+    virtual bool run_inference(cv::Mat preprocessed_image,
+                               double *last_inference_time);
+
+    void print_summary_stats();
 
     virtual ~ModelHelper() = default;
 

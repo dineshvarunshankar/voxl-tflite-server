@@ -224,3 +224,110 @@ void ModelHelper::setupDelegate(DelegateOpt delegate_choice)
     break;
     }
 }
+
+bool ModelHelper::run_inference(cv::Mat preprocessed_image,
+                                double *last_inference_time)
+{
+    start_time = rc_nanos_monotonic_time();
+    // Get input dimension from the input tensor metadata assuming one input
+    // only
+    int input = interpreter->inputs()[0];
+
+    // manually fill tensor with image data, specific to input format
+    switch (interpreter->tensor(input)->type)
+    {
+    case kTfLiteFloat32:
+    {
+        float *dst = TensorData<float>(interpreter->tensor(input), 0);
+        const int row_elems = model_width * model_channels;
+        for (int row = 0; row < model_height; row++)
+        {
+            const uchar *row_ptr = preprocessed_image.ptr(row);
+            for (int i = 0; i < row_elems; i++)
+            {
+                if (do_normalize == HARD_DIVISION)
+                    dst[i] = row_ptr[i] / NORMALIZATION_CONST;
+                else if (do_normalize == PIXEL_MEAN)
+                    dst[i] =
+                        (row_ptr[i] - PIXEL_MEAN_GUESS) / PIXEL_MEAN_GUESS;
+                else
+                    dst[i] = (row_ptr[i]);
+            }
+            dst += row_elems;
+        }
+    }
+    break;
+
+    case kTfLiteInt8:
+    {
+        int8_t *dst = TensorData<int8_t>(interpreter->tensor(input), 0);
+        const int row_elems = model_width * model_channels;
+        for (int row = 0; row < model_height; row++)
+        {
+            const uchar *row_ptr = preprocessed_image.ptr(row);
+            for (int i = 0; i < row_elems; i++)
+            {
+                dst[i] = row_ptr[i];
+            }
+            dst += row_elems;
+        }
+    }
+    break;
+
+    case kTfLiteUInt8:
+    {
+        uint8_t *dst = TensorData<uint8_t>(interpreter->tensor(input), 0);
+        int row_elems = model_width * model_channels;
+        for (int row = 0; row < model_height; row++)
+        {
+            uchar *row_ptr = preprocessed_image.ptr(row);
+            for (int i = 0; i < row_elems; i++)
+            {
+                dst[i] = row_ptr[i];
+            }
+            dst += row_elems;
+        }
+    }
+    break;
+
+    default:
+        fprintf(stderr, "FATAL: Unsupported model input type!");
+        return false;
+    }
+
+    if (interpreter->Invoke() != kTfLiteOk)
+    {
+        fprintf(stderr, "FATAL: Failed to invoke tflite!\n");
+        return false;
+    }
+
+    int64_t end_time = rc_nanos_monotonic_time();
+
+    if (en_timing)
+        total_inference_time += ((end_time - start_time) / 1000000.);
+    if (last_inference_time != nullptr)
+        *last_inference_time = ((double)(end_time - start_time) / 1000000.);
+
+    return true;
+}
+
+void ModelHelper::print_summary_stats()
+{
+    fprintf(stderr, "\n------------------------------------------\n");
+    fprintf(stderr, "TIMING STATS (on %d processed frames)\n",
+            num_frames_processed);
+    fprintf(stderr, "------------------------------------------\n");
+    fprintf(stderr,
+            "Preprocessing Time  -> Total: %6.2fms, Average: %6.2fms\n",
+            (double)(total_preprocess_time),
+            (double)((total_preprocess_time / (num_frames_processed))));
+    fprintf(stderr,
+            "Inference Time      -> Total: %6.2fms, Average: %6.2fms\n",
+            (double)(total_inference_time),
+            (double)((total_inference_time / (num_frames_processed))));
+    fprintf(stderr,
+            "Postprocessing Time -> Total: %6.2fms, Average: %6.2fms\n",
+            (double)(total_postprocess_time),
+            (double)((total_postprocess_time / (num_frames_processed))));
+    fprintf(stderr, "------------------------------------------\n");
+}

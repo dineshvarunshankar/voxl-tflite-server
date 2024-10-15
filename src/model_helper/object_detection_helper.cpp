@@ -17,11 +17,10 @@ ObjectDetectionModel::ObjectDetectionModel(char *model_file, char *labels_file,
    }
 }
 
-bool ObjectDetectionModel::postprocess(cv::Mat &output_image, void* input_params) {
+bool ObjectDetectionModel::postprocess(cv::Mat &output_image, double last_inference_time, void* input_params) {
     
     ObjectDetectionParams *params = static_cast<ObjectDetectionParams *>(input_params);
     std::vector<ai_detection_t> &detections_vector = params->detections_vector;
-    double last_inference_time = params->last_inference_time;
 
     start_time = rc_nanos_monotonic_time();
 
