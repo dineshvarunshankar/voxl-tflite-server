@@ -17,7 +17,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fsee -fomit-frame-pointer -fno-sign
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -Wall -Wuninitialized -Wmaybe-uninitialized -fno-omit-frame-pointer")
 
 # Build from all source files
-file(GLOB all_src_files *.c*)
+file(GLOB_RECURSE all_src_files *.c*)
 
 add_executable(${TARGET}
 	${all_src_files}
@@ -25,6 +25,7 @@ add_executable(${TARGET}
 
 include_directories(
     ../include
+    ..include/model_helper
     /usr/include/opencv4/
 
     # # apq8096 SPECIFIC

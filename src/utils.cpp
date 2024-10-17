@@ -34,21 +34,20 @@ TfLiteStatus ReadLabelsFile(char *file_name, std::vector<std::string> *result,
     return kTfLiteOk;
 }
 
-static uint64_t rc_nanos_monotonic_time()
+uint64_t rc_nanos_monotonic_time()
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return ((uint64_t)ts.tv_sec * 1000000000) + ts.tv_nsec;
 }
 
-static bool _parse_opts(int argc, char *argv[], bool *en_debug, bool *en_timing)
+bool _parse_opts(int argc, char *argv[], bool *en_debug, bool *en_timing)
 {
-    static struct option long_options[] = {{"config", no_argument, 0, 'm'},
+    struct option long_options[] = {{"config", no_argument, 0, 'm'},
                                            {"debug", no_argument, 0, 'c'},
                                            {"timing", no_argument, 0, 't'},
                                            {"help", no_argument, 0, 'h'},
                                            {0, 0, 0}};
-
     while (1)
     {
         int option_index = 0;

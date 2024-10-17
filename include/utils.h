@@ -10,9 +10,9 @@ TfLiteStatus ReadLabelsFile(char *file_name, std::vector<std::string> *result,
                             size_t *found_label_count);
 
 // timing helper
-static uint64_t rc_nanos_monotonic_time();
+uint64_t rc_nanos_monotonic_time();
 
-static bool _parse_opts(int argc, char *argv[], bool *en_debug, bool *en_timing);
+bool _parse_opts(int argc, char *argv[], bool *en_debug, bool *en_timing);
 
 void _print_usage();
 

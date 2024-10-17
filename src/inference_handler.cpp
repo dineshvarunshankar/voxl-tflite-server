@@ -83,7 +83,7 @@ void *inference_worker(void *args)
         case OBJECT_DETECT_MODEL:
         {
             std::vector<ai_detection_t> detections;
-            auto params = std::make_unique<ObjectDetectionParams>(detections);
+            auto params = std::make_unique<ObjectDetectionModelParams>(detections);
             if (!model_helper->postprocess(output_image, last_inference_time, params.get()))
                 continue;
 

@@ -1,5 +1,21 @@
 #include "model_helper/model_helper.h"
 
+std::map<ModelName, ModelCategory> model_category_map = {
+    {YOLOV5, OBJECT_DETECTION},
+    {YOLOV8, OBJECT_DETECTION},
+    {OBJECT_DETECT_MODEL, OBJECT_DETECTION},
+    {CLASSIFICATION_MODEL, CLASSIFICATION},
+    {SEGMENTATION_MODEL, SEGMENTATION},
+    {POSENET, POSE},
+    {MONO_DEPTH_MODEL, MONO_DEPTH}
+};
+
+std::map<ModelName, ModelHelperMeta> model_helper_map = {
+    {OBJECT_DETECT_MODEL, ModelHelperMeta(std::make_unique<ObjectDetectionModelHelper>(), std::make_unique<ObjectDetectionModelParams>())},
+};
+
+
+
 ModelHelper::ModelHelper(char *model_file, char *labels_file,
                          DelegateOpt delegate_choice, bool _en_debug,
                          bool _en_timing, NormalizationType _do_normalize)

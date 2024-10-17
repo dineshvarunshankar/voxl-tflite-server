@@ -1,3 +1,6 @@
+#ifndef TENSOR_DATA_H
+#define TENSOR_DATA_H
+
 #include "tensorflow/lite/examples/label_image/bitmap_helpers.h"
 
 template <typename T>
@@ -5,7 +8,7 @@ T *TensorData(TfLiteTensor *tensor, int batch_index);
 
 // Gets the float tensor data pointer
 template <>
-float *TensorData(TfLiteTensor *tensor, int batch_index)
+inline float *TensorData(TfLiteTensor *tensor, int batch_index)
 {
     int nelems = 1;
 
@@ -28,7 +31,7 @@ float *TensorData(TfLiteTensor *tensor, int batch_index)
 
 // Gets the int32_t tensor data pointer
 template <>
-int32_t *TensorData(TfLiteTensor *tensor, int batch_index)
+inline int32_t *TensorData(TfLiteTensor *tensor, int batch_index)
 {
     int nelems = 1;
 
@@ -51,7 +54,7 @@ int32_t *TensorData(TfLiteTensor *tensor, int batch_index)
 
 // Gets the int64_t tensor data pointer
 template <>
-int64_t *TensorData(TfLiteTensor *tensor, int batch_index)
+inline int64_t *TensorData(TfLiteTensor *tensor, int batch_index)
 {
     int nelems = 1;
 
@@ -74,7 +77,7 @@ int64_t *TensorData(TfLiteTensor *tensor, int batch_index)
 
 // Gets the int8_t tensor data pointer
 template <>
-int8_t *TensorData(TfLiteTensor *tensor, int batch_index)
+inline int8_t *TensorData(TfLiteTensor *tensor, int batch_index)
 {
     int nelems = 1;
 
@@ -97,7 +100,7 @@ int8_t *TensorData(TfLiteTensor *tensor, int batch_index)
 
 // Gets the uint8_t tensor data pointer
 template <>
-uint8_t *TensorData(TfLiteTensor *tensor, int batch_index)
+inline uint8_t *TensorData(TfLiteTensor *tensor, int batch_index)
 {
     int nelems = 1;
 
@@ -117,3 +120,5 @@ uint8_t *TensorData(TfLiteTensor *tensor, int batch_index)
 
     return nullptr;
 }
+
+#endif

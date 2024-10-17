@@ -21,8 +21,15 @@
 #include "utils.h"
 #include "resize.h"
 
+#ifdef BUILD_QRB5165
+#include "tensorflow/lite/delegates/xnnpack/xnnpack_delegate.h"
+#include "tensorflow/lite/delegates/nnapi/nnapi_delegate.h"
+#include "tensorflow/lite/nnapi/nnapi_util.h"
+#endif
+
 #include "config_file.h"
 #include "tensor_data.h"
+#include "model_info.h"
 
 #define MAX_IMAGE_SIZE 12441600
 #define QUEUE_SIZE 24 // max messages to be stored in queue
@@ -56,37 +63,13 @@ struct TFLiteCamQueue
     int insert_idx = 0;              // next element insert location (between 0 - QUEUE_SIZE)
 };
 
-// ModelName refers to the name of the model
-// Any name with *_MODEL is a generic for that model category
-// (as defined in the map)
-enum ModelName
+struct ModelHelperMeta
 {
-    OBJECT_DETECT_MODEL,
-    MONO_DEPTH_MODEL,
-    SEGMENTATION_MODEL,
-    CLASSIFICATION_MODEL,
-    POSENET,
-    YOLOV5,
-    YOLOV8
-};
+    std::unique_ptr<ModelHelper> helper;
+    std::unique_ptr<PostprocessParams> params;
 
-enum ModelCategory
-{
-    OBJECT_DETECTION,
-    CLASSIFICATION,
-    SEGMENTATION,
-    MONO_DEPTH,
-    POSE
-};
-
-std::map<ModelName, ModelCategory> model_category_map = {
-    {YOLOV5, OBJECT_DETECTION},
-    {YOLOV8, OBJECT_DETECTION},
-    {OBJECT_DETECT_MODEL, OBJECT_DETECTION},
-    {CLASSIFICATION_MODEL, CLASSIFICATION},
-    {SEGMENTATION_MODEL, SEGMENTATION},
-    {POSENET, POSE},
-    {MONO_DEPTH_MODEL, MONO_DEPTH}
+    ModelHelperMeta(std::unique_ptr<ModelHelper> h, std::unique_ptr<PostprocessParams> p)
+        : helper(std::move(h)), params(std::move(p)) {}
 };
 
 class ModelHelper
@@ -165,6 +148,20 @@ public:
 protected:
     // Function to setup the delegate based on selection
     void setupDelegate(DelegateOpt delegate_choice);
+};
+
+class ObjectDetectionModelHelper : public ModelHelper
+{
+private:
+    std::vector<std::string> labels;
+    size_t label_count;
+
+public:
+    ObjectDetectionModelHelper(char *model_file, char *labels_file,
+                         DelegateOpt delegate_choice, bool _en_debug,
+                         bool _en_timing, NormalizationType _do_normalize);
+
+    bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params) override;
 };
 
 #endif // MODEL_HELPER_H
