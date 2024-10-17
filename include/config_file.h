@@ -87,6 +87,9 @@ extern int skip_n_frames;
 extern bool allow_multiple;
 extern char output_pipe_prefix[CHAR_BUF_SIZE];
 extern char labels_in_use[CHAR_BUF_SIZE];
+extern bool en_debug;
+extern bool en_timing;
+
 
 void config_file_print(void);
 int config_file_read(void);

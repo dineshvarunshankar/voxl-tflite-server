@@ -7,14 +7,24 @@ std::map<ModelName, ModelCategory> model_category_map = {
     {CLASSIFICATION_MODEL, CLASSIFICATION},
     {SEGMENTATION_MODEL, SEGMENTATION},
     {POSENET, POSE},
-    {MONO_DEPTH_MODEL, MONO_DEPTH}
-};
+    {MONO_DEPTH_MODEL, MONO_DEPTH}};
 
-std::map<ModelName, ModelHelperMeta> model_helper_map = {
-    {OBJECT_DETECT_MODEL, ModelHelperMeta(std::make_unique<ObjectDetectionModelHelper>(), std::make_unique<ObjectDetectionModelParams>())},
-};
+ModelHelperMeta create_model_helper(ModelName model_name,
+                                    DelegateOpt opt_,
+                                    NormalizationType do_normalize)
+{
 
+    // most of the required args are externs from the conig file
+    std::map<ModelName, std::function<ModelHelperMeta()>> model_helper_factory_map = {
+        {OBJECT_DETECT_MODEL, [&]()
+         {
+             return ModelHelperMeta(
+                 std::make_unique<ObjectDetectionModelHelper>(model, labels_in_use, opt_, en_debug, en_timing, do_normalize),
+                 std::make_unique<ObjectDetectionModelParams>());
+         }}};
 
+    return model_helper_factory_map[model_name]();
+}
 
 ModelHelper::ModelHelper(char *model_file, char *labels_file,
                          DelegateOpt delegate_choice, bool _en_debug,

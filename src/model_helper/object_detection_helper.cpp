@@ -1,25 +1,27 @@
-#include "model_helper/object_detection_helper.h"
+#include "model_helper/model_helper.h"
 #include "tensor_data.h"
 #include "image_utils.h"
 
-ObjectDetectionModel::ObjectDetectionModel(char *model_file, char *labels_file,
-                                           DelegateOpt delegate_choice, bool _en_debug,
-                                           bool _en_timing, NormalizationType _do_normalize)
+ObjectDetectionModelHelper::ObjectDetectionModelHelper(char *model_file, char *labels_file,
+                                                       DelegateOpt delegate_choice, bool _en_debug,
+                                                       bool _en_timing, NormalizationType _do_normalize)
     : ModelHelper(model_file, labels_file, delegate_choice, _en_debug, _en_timing, _do_normalize)
 {
-   if (labels.empty()) {
-       if (ReadLabelsFile(labels_location, &labels, &label_count) !=
-           kTfLiteOk)
-       {
-           fprintf(stderr, "ERROR: Unable to read labels file\n");
+    if (labels.empty())
+    {
+        if (ReadLabelsFile(labels_location, &labels, &label_count) !=
+            kTfLiteOk)
+        {
+            fprintf(stderr, "ERROR: Unable to read labels file\n");
             exit(-1);
-       }
-   }
+        }
+    }
 }
 
-bool ObjectDetectionModel::postprocess(cv::Mat &output_image, double last_inference_time, void* input_params) {
-    
-    ObjectDetectionParams *params = static_cast<ObjectDetectionParams *>(input_params);
+bool ObjectDetectionModelHelper::postprocess(cv::Mat &output_image, double last_inference_time, void *input_params)
+{
+
+    ObjectDetectionModelParams *params = static_cast<ObjectDetectionModelParams *>(input_params);
     std::vector<ai_detection_t> &detections_vector = params->detections_vector;
 
     start_time = rc_nanos_monotonic_time();
@@ -106,4 +108,3 @@ bool ObjectDetectionModel::postprocess(cv::Mat &output_image, double last_infere
 
     return true;
 }
-

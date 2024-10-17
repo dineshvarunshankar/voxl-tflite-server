@@ -117,7 +117,6 @@ void *inference_worker(void *args)
 
 void initialize_inference_settings(char *model, char *delegate, int *tensor_offset, ModelName *model_name, NormalizationType *norm_type, DelegateOpt *opt)
 {
-
     // Set delegate
     *opt = GPU; // default for MAI models
     if (!strcmp(delegate, "cpu"))

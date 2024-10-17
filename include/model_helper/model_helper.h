@@ -63,15 +63,6 @@ struct TFLiteCamQueue
     int insert_idx = 0;              // next element insert location (between 0 - QUEUE_SIZE)
 };
 
-struct ModelHelperMeta
-{
-    std::unique_ptr<ModelHelper> helper;
-    std::unique_ptr<PostprocessParams> params;
-
-    ModelHelperMeta(std::unique_ptr<ModelHelper> h, std::unique_ptr<PostprocessParams> p)
-        : helper(std::move(h)), params(std::move(p)) {}
-};
-
 class ModelHelper
 {
 protected:
@@ -158,10 +149,25 @@ private:
 
 public:
     ObjectDetectionModelHelper(char *model_file, char *labels_file,
-                         DelegateOpt delegate_choice, bool _en_debug,
-                         bool _en_timing, NormalizationType _do_normalize);
+                               DelegateOpt delegate_choice, bool _en_debug,
+                               bool _en_timing, NormalizationType _do_normalize);
 
     bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params) override;
 };
+
+struct ModelHelperMeta
+{
+    std::unique_ptr<ModelHelper> helper;
+    std::unique_ptr<PostprocessParams> params;
+
+    ModelHelperMeta(std::unique_ptr<ModelHelper> h, std::unique_ptr<PostprocessParams> p)
+        : helper(std::move(h)), params(std::move(p)) {}
+};
+
+ModelHelperMeta create_model_helper(ModelName model_name,
+                                    DelegateOpt opt_,
+                                    NormalizationType do_normalize);
+
+extern std::map<ModelName, std::function<ModelHelperMeta()>> model_helper_factory_map;
 
 #endif // MODEL_HELPER_H

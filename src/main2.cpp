@@ -1,5 +1,6 @@
 #include "config_file.h"
 #include "utils.h"
+#include "model_helper/model_info.h"
 #include "inference_handler.h"
 
 #define PROCESS_NAME "voxl-tflite-server"
@@ -137,15 +138,16 @@ int main(int argc, char *argv[])
 
     int tensor_offset = 0; // legacy issue, require specific handling for mobile net where this needs to be set to 1
     ModelName model_name;
-    NormalizationType norm_type;
     DelegateOpt opt_;
     ////////////////////////////////////////////////////////////////////////////////
     // initialize InferenceHelper
     ////////////////////////////////////////////////////////////////////////////////
 
-    initialize_inference_settings(model, delegate, &tensor_offset, &model_name, &norm_type, &opt_);
+    initialize_inference_settings(model, delegate, &tensor_offset, &model_name, &do_normalize, &opt_);
 
-    model_helper = new ModelHelper(model, labels_in_use, opt_, en_debug, en_timing, norm_type);
+    ModelHelperMeta model_helper_info = create_model_helper(model_name, opt_, do_normalize);
+    model_helper = model_helper_info.helper.get();
+    PostprocessParams *params = model_helper_info.params.get();
 
     // store cam name
     std::string full_path(input_pipe);
