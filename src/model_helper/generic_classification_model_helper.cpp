@@ -13,7 +13,7 @@ bool GenericClassificationModelHelper::postprocess(cv::Mat &output_image, double
 
     int tensor_offset = params->tensor_offset;
 
-    int classification_classes = 1000;
+    int num_of_classes = 1000;
 
     start_time = rc_nanos_monotonic_time();
 
@@ -37,7 +37,7 @@ bool GenericClassificationModelHelper::postprocess(cv::Mat &output_image, double
     std::vector<uint8_t> confidences;
     confidences.assign(
         confidence_tensor + tensor_offset,
-        confidence_tensor + classification_classes + tensor_offset);
+        confidence_tensor + num_of_classes + tensor_offset);
 
     uint8_t best_prob =
         *std::max_element(confidences.begin(), confidences.end());

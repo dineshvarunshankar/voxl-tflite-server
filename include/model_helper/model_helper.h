@@ -121,7 +121,7 @@ public:
                                   char *frame, cv::Mat &preprocessed_image,
                                   cv::Mat &output_image);
 
-    virtual bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params) = 0;
+    virtual bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params = nullptr) = 0;
     virtual bool run_inference(cv::Mat preprocessed_image,
                                double *last_inference_time);
 
@@ -174,6 +174,15 @@ class PoseNetModelHelper : public ModelHelper
 {
 public:
     PoseNetModelHelper(char *model_file, char *labels_file,
+                       DelegateOpt delegate_choice, bool _en_debug,
+                       bool _en_timing, NormalizationType _do_normalize);
+    bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params) override;
+};
+
+class FastDepthModelHelper : public ModelHelper
+{
+public:
+    FastDepthModelHelper(char *model_file, char *labels_file,
                        DelegateOpt delegate_choice, bool _en_debug,
                        bool _en_timing, NormalizationType _do_normalize);
     bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params) override;

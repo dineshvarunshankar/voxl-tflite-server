@@ -20,7 +20,7 @@ GenericObjectDetectionModelHelper::GenericObjectDetectionModelHelper(char *model
 
 bool GenericObjectDetectionModelHelper::postprocess(cv::Mat &output_image, double last_inference_time, void *input_params)
 {
-    ObjectDetectionModelParams *params = static_cast<ObjectDetectionModelParams *>(input_params);
+    GenericObjectDetectionModelParams *params = static_cast<GenericObjectDetectionModelParams *>(input_params);
     std::vector<ai_detection_t> &detections_vector = params->detections_vector;
 
     start_time = rc_nanos_monotonic_time();

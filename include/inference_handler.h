@@ -38,5 +38,6 @@ bool generic_object_detection_worker(ModelHelper *model_helper,
                                      TFLiteMessage *new_frame);
 
 bool generic_classification_worker(ModelHelper *model_helper, cv::Mat &output_image, double last_inference_time, int tensor_offset, TFLiteMessage *new_frame);
+bool generic_pose_worker(ModelHelper *model_helper, cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame);
 
 #endif

@@ -10,9 +10,6 @@
 #include <opencv2/imgproc/types_c.h>
 #include "ai_detection.h"
 
-// ModelName refers to the name of the model
-// Any name with *_MODEL is a generic for that model category
-// (as defined in the map)
 enum ModelName
 {
     MOBILE_NET,
@@ -25,7 +22,7 @@ enum ModelName
     PLACEHOLDER
 };
 
-// The category enum is a kinda redundant, might get rid 
+// The category enum is a kinda redundant, might get rid
 // of it all together
 enum ModelCategory
 {
@@ -38,13 +35,13 @@ enum ModelCategory
 
 extern std::map<ModelName, ModelCategory> model_category_map;
 
-class ObjectDetectionModelParams
+class GenericObjectDetectionModelParams
 {
 public:
     std::vector<ai_detection_t> detections_vector;
 
     // Constructor to initialize detections_vector
-    ObjectDetectionModelParams(const std::vector<ai_detection_t> &detections)
+    GenericObjectDetectionModelParams(const std::vector<ai_detection_t> &detections)
         : detections_vector(detections) {}
 };
 
@@ -57,5 +54,13 @@ public:
         : tensor_offset(tensor_offset) {}
 };
 
+class FastDepthModelParams
+{
+public:
+    camera_image_metadata_t &meta;
+
+    FastDepthModelParams(camera_image_metadata_t &meta_)
+        : meta(meta_) {} 
+};
 
 #endif
