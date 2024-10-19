@@ -2,9 +2,9 @@
 #include "tensor_data.h"
 #include "image_utils.h"
 
-ObjectDetectionModelHelper::ObjectDetectionModelHelper(char *model_file, char *labels_file,
-                                                       DelegateOpt delegate_choice, bool _en_debug,
-                                                       bool _en_timing, NormalizationType _do_normalize)
+GenericObjectDetectionModelHelper::GenericObjectDetectionModelHelper(char *model_file, char *labels_file,
+                                                                     DelegateOpt delegate_choice, bool _en_debug,
+                                                                     bool _en_timing, NormalizationType _do_normalize)
     : ModelHelper(model_file, labels_file, delegate_choice, _en_debug, _en_timing, _do_normalize)
 {
     if (labels.empty())
@@ -18,9 +18,8 @@ ObjectDetectionModelHelper::ObjectDetectionModelHelper(char *model_file, char *l
     }
 }
 
-bool ObjectDetectionModelHelper::postprocess(cv::Mat &output_image, double last_inference_time, void *input_params)
+bool GenericObjectDetectionModelHelper::postprocess(cv::Mat &output_image, double last_inference_time, void *input_params)
 {
-
     ObjectDetectionModelParams *params = static_cast<ObjectDetectionModelParams *>(input_params);
     std::vector<ai_detection_t> &detections_vector = params->detections_vector;
 

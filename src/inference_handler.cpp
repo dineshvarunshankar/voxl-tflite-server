@@ -6,6 +6,7 @@ void *inference_worker(void *args)
     InferenceWorkerArgs *worker_args = static_cast<InferenceWorkerArgs *>(args);
     ModelHelper *model_helper = worker_args->model_helper;
     ModelName model_name = worker_args->model_name;
+    ModelCategory model_category = worker_args->model_category;
 
     // Set thread priority
     pid_t tid = syscall(SYS_gettid);
@@ -80,32 +81,37 @@ void *inference_worker(void *args)
         // Now creating the post process input param package
         switch (model_name)
         {
-        case OBJECT_DETECT_MODEL:
+        case MOBILE_NET:
         {
-            std::vector<ai_detection_t> detections;
-            auto params = std::make_unique<ObjectDetectionModelParams>(detections);
-            if (!model_helper->postprocess(output_image, last_inference_time, params.get()))
-                continue;
-
-            if (!detections.empty())
+            if (model_category == OBJECT_DETECTION)
             {
-                for (unsigned int i = 0; i < detections.size(); i++)
-                {
-                    pipe_server_write(DETECTION_CH, (char *)&detections[i],
-                                      sizeof(ai_detection_t));
-                }
+                std::vector<ai_detection_t> detections;
+                if (!generic_object_detection_worker(model_helper, output_image, last_inference_time, detections, new_frame))
+                    continue;
             }
-            new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
-            pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata,
-                                           (char *)output_image.data);
 
-            break;
+            else if (model_category == CLASSIFICATION)
+            {
+                int tensor_offset = 1;
+                if (!generic_classification_worker(model_helper, output_image, last_inference_time, tensor_offset, new_frame))
+                    continue;
+            }
+
+            // Handle other categories if any
+        }
+
+        case POSENET:
+        {
+            if (model_category == POSE)
+            {
+            }
+            // Handle other categories if any
         }
 
         default:
         {
             // Handle unsupported model types or an error case
-            fprintf(stderr, "Error: Unsupported model type.\n");
+            fprintf(stderr, "Error: Unsupported model.\n");
             break;
         }
         }
@@ -115,52 +121,104 @@ void *inference_worker(void *args)
     return nullptr;
 }
 
-void initialize_inference_settings(char *model, char *delegate, int *tensor_offset, ModelName *model_name, NormalizationType *norm_type, DelegateOpt *opt)
+bool generic_object_detection_worker(ModelHelper *model_helper,
+                                     cv::Mat &output_image,
+                                     double last_inference_time,
+                                     std::vector<ai_detection_t> &detections,
+                                     TFLiteMessage *new_frame)
 {
-    // Set delegate
+    auto params = std::make_unique<ObjectDetectionModelParams>(detections);
+
+    if (!model_helper->postprocess(output_image, last_inference_time, params.get()))
+        return false;
+
+    if (!detections.empty())
+    {
+        for (unsigned int i = 0; i < detections.size(); i++)
+        {
+            pipe_server_write(DETECTION_CH, (char *)&detections[i], sizeof(ai_detection_t));
+        }
+    }
+
+    new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
+    pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata, (char *)output_image.data);
+
+    return true;
+}
+
+bool generic_classification_worker(ModelHelper *model_helper, cv::Mat &output_image, double last_inference_time, int tensor_offset, TFLiteMessage *new_frame)
+{
+    auto params = std::make_unique<ClassificationModelParams>(tensor_offset);
+
+    if (!model_helper->postprocess(output_image, last_inference_time, params.get()))
+        return false;
+
+    new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
+    pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata,
+                                   (char *)output_image.data);
+    return true;
+}
+
+bool generic_pose_worker(ModelHelper *model_helper, cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame)
+{
+
+    return true;
+}
+void set_delegate(DelegateOpt *opt)
+{
     *opt = GPU; // default for MAI models
     if (!strcmp(delegate, "cpu"))
         *opt = XNNPACK;
     else if (!strcmp(delegate, "nnapi"))
         *opt = NNAPI;
+}
+
+void initialize_model_settings(char *model, char *delegate, ModelName *model_name, ModelCategory *model_category, NormalizationType *norm_type, bool *custom_post)
+{
 
     // set model type
     if (!strcmp(model, "/usr/bin/dnn/ssdlite_mobilenet_v2_coco.tflite"))
     {
-        *model_name = OBJECT_DETECT_MODEL;
-        *norm_type =
-            PIXEL_MEAN; // funky for mobilenet, doesn't like hard division
+        *model_name = MOBILE_NET;
+        *model_category = OBJECT_DETECTION;
+        // funky for mobilenet, doesn't like hard division
+        *norm_type = PIXEL_MEAN;
     }
     else if (!strcmp(model, "/usr/bin/dnn/mobilenetv1_nnapi_quant.tflite"))
     {
-        *model_name = OBJECT_DETECT_MODEL;
+        *model_name = MOBILE_NET;
+        *model_category = OBJECT_DETECTION;
+        // funky for mobilenet, doesn't like hard division
+        *norm_type = PIXEL_MEAN;
     }
     else if (!strcmp(model, "/usr/bin/dnn/fastdepth_float16_quant.tflite"))
     {
-        *model_name = MONO_DEPTH_MODEL;
+        *model_name = FAST_DEPTH;
+        *model_category = OBJECT_DETECTION;
         *norm_type = HARD_DIVISION;
     }
     else if (!strcmp(model,
                      "/usr/bin/dnn/"
                      "edgetpu_deeplab_321_os32_float16_quant.tflite"))
     {
-        *model_name = SEGMENTATION_MODEL;
+        *model_name = DEEPLAB;
+        *model_category = SEGMENTATION;
         *norm_type = NONE;
     }
     else if (!strcmp(model,
                      "/usr/bin/dnn/"
                      "lite-model_efficientnet_lite4_uint8_2.tflite"))
     {
-        *model_name = CLASSIFICATION_MODEL;
+        *model_name = EFFICIENT_NET;
+        *model_category = CLASSIFICATION;
         *norm_type = PIXEL_MEAN;
     }
     else if (!strcmp(model,
                      "/usr/bin/dnn/mobilenetv1_nnapi_classifier.tflite"))
     {
-        *model_name = CLASSIFICATION_MODEL;
+        *model_name = MOBILE_NET;
+        *model_category = CLASSIFICATION;
         *norm_type = PIXEL_MEAN;
-        // mobilenet special for background class!!!
-        *tensor_offset = 1;
     }
     else if (!strcmp(model,
                      "/usr/bin/dnn/"
@@ -168,23 +226,29 @@ void initialize_inference_settings(char *model, char *delegate, int *tensor_offs
                      "4.tflite"))
     {
         *model_name = POSENET;
+        *model_category = POSE;
         *norm_type = NONE;
     }
     else if (!strcmp(model, "/usr/bin/dnn/yolov5_float16_quant.tflite"))
     {
         *model_name = YOLOV5;
+        *model_category = OBJECT_DETECTION;
         *norm_type = HARD_DIVISION;
+        *custom_post = true;
     }
     else if (!strcmp(model, "/usr/bin/dnn/yolov8n_float16.tflite"))
     {
         *model_name = YOLOV8;
+        *model_category = OBJECT_DETECTION;
         *norm_type = HARD_DIVISION;
+        *custom_post = true;
     }
     else
     {
         fprintf(stderr,
                 "WARNING: Unknown model type provided! Defaulting post-process "
                 "to object detection.\n");
-        *model_name = OBJECT_DETECT_MODEL;
+        *model_name = PLACEHOLDER;
+        *model_category = OBJECT_DETECTION;
     }
 }

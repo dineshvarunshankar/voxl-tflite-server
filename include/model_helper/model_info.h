@@ -15,15 +15,18 @@
 // (as defined in the map)
 enum ModelName
 {
-    OBJECT_DETECT_MODEL,
-    MONO_DEPTH_MODEL,
-    SEGMENTATION_MODEL,
-    CLASSIFICATION_MODEL,
+    MOBILE_NET,
+    FAST_DEPTH,
+    DEEPLAB,
+    EFFICIENT_NET,
     POSENET,
     YOLOV5,
-    YOLOV8
+    YOLOV8,
+    PLACEHOLDER
 };
 
+// The category enum is a kinda redundant, might get rid 
+// of it all together
 enum ModelCategory
 {
     OBJECT_DETECTION,
@@ -35,17 +38,24 @@ enum ModelCategory
 
 extern std::map<ModelName, ModelCategory> model_category_map;
 
-
-class PostprocessParams
-{
-public:
-    virtual ~PostprocessParams() = default; // Virtual destructor for proper cleanup
-};
-
-class ObjectDetectionModelParams : public PostprocessParams
+class ObjectDetectionModelParams
 {
 public:
     std::vector<ai_detection_t> detections_vector;
+
+    // Constructor to initialize detections_vector
+    ObjectDetectionModelParams(const std::vector<ai_detection_t> &detections)
+        : detections_vector(detections) {}
 };
+
+class ClassificationModelParams
+{
+public:
+    int tensor_offset;
+
+    ClassificationModelParams(int tensor_offset)
+        : tensor_offset(tensor_offset) {}
+};
+
 
 #endif

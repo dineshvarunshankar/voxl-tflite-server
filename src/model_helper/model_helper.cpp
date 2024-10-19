@@ -1,29 +1,20 @@
 #include "model_helper/model_helper.h"
 
-std::map<ModelName, ModelCategory> model_category_map = {
-    {YOLOV5, OBJECT_DETECTION},
-    {YOLOV8, OBJECT_DETECTION},
-    {OBJECT_DETECT_MODEL, OBJECT_DETECTION},
-    {CLASSIFICATION_MODEL, CLASSIFICATION},
-    {SEGMENTATION_MODEL, SEGMENTATION},
-    {POSENET, POSE},
-    {MONO_DEPTH_MODEL, MONO_DEPTH}};
-
-ModelHelperMeta create_model_helper(ModelName model_name,
-                                    DelegateOpt opt_,
-                                    NormalizationType do_normalize)
+ModelHelper *create_model_helper(ModelName model_name,
+                                 ModelCategory model_category,
+                                 DelegateOpt opt_,
+                                 NormalizationType do_normalize)
 {
 
-    // most of the required args are externs from the conig file
-    std::map<ModelName, std::function<ModelHelperMeta()>> model_helper_factory_map = {
-        {OBJECT_DETECT_MODEL, [&]()
+    std::map<std::pair<ModelName, ModelCategory>, std::function<ModelHelper *()>> model_helper_factory_map = {
+        {{MOBILE_NET, ModelCategory::OBJECT_DETECTION}, [&]()
          {
-             return ModelHelperMeta(
-                 std::make_unique<ObjectDetectionModelHelper>(model, labels_in_use, opt_, en_debug, en_timing, do_normalize),
-                 std::make_unique<ObjectDetectionModelParams>());
-         }}};
+             return new GenericObjectDetectionModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+         }},
+    };
 
-    return model_helper_factory_map[model_name]();
+    std::pair<ModelName, ModelCategory> model_key = std::make_pair(model_name, model_category);
+    return model_helper_factory_map[model_key](); 
 }
 
 ModelHelper::ModelHelper(char *model_file, char *labels_file,

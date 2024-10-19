@@ -121,7 +121,7 @@ public:
                                   char *frame, cv::Mat &preprocessed_image,
                                   cv::Mat &output_image);
 
-    virtual bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params);
+    virtual bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params) = 0;
     virtual bool run_inference(cv::Mat preprocessed_image,
                                double *last_inference_time);
 
@@ -141,33 +141,42 @@ protected:
     void setupDelegate(DelegateOpt delegate_choice);
 };
 
-class ObjectDetectionModelHelper : public ModelHelper
+ModelHelper *create_model_helper(ModelName model_name,
+                                 DelegateOpt opt_,
+                                 NormalizationType do_normalize);
+
+class GenericObjectDetectionModelHelper : public ModelHelper
 {
 private:
     std::vector<std::string> labels;
     size_t label_count;
 
 public:
-    ObjectDetectionModelHelper(char *model_file, char *labels_file,
-                               DelegateOpt delegate_choice, bool _en_debug,
-                               bool _en_timing, NormalizationType _do_normalize);
+    GenericObjectDetectionModelHelper(char *model_file, char *labels_file,
+                                      DelegateOpt delegate_choice, bool _en_debug,
+                                      bool _en_timing, NormalizationType _do_normalize);
 
     bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params) override;
 };
 
-struct ModelHelperMeta
+class GenericClassificationModelHelper : public ModelHelper
 {
-    std::unique_ptr<ModelHelper> helper;
-    std::unique_ptr<PostprocessParams> params;
 
-    ModelHelperMeta(std::unique_ptr<ModelHelper> h, std::unique_ptr<PostprocessParams> p)
-        : helper(std::move(h)), params(std::move(p)) {}
+public:
+    GenericClassificationModelHelper(char *model_file, char *labels_file,
+                                     DelegateOpt delegate_choice, bool _en_debug,
+                                     bool _en_timing, NormalizationType _do_normalize);
+
+    bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params) override;
 };
 
-ModelHelperMeta create_model_helper(ModelName model_name,
-                                    DelegateOpt opt_,
-                                    NormalizationType do_normalize);
-
-extern std::map<ModelName, std::function<ModelHelperMeta()>> model_helper_factory_map;
+class PoseNetModelHelper : public ModelHelper
+{
+public:
+    PoseNetModelHelper(char *model_file, char *labels_file,
+                       DelegateOpt delegate_choice, bool _en_debug,
+                       bool _en_timing, NormalizationType _do_normalize);
+    bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params) override;
+};
 
 #endif // MODEL_HELPER_H
