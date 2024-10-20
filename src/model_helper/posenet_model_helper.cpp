@@ -1,4 +1,4 @@
-#include "model_helper/model_helper.h"
+#include "model_helper/posenet_model_helper.h"
 #include "tensor_data.h"
 #include "image_utils.h"
 
@@ -34,7 +34,7 @@ bool PoseNetModelHelper::postprocess(cv::Mat &output_image, double last_inferenc
 {
     start_time = rc_nanos_monotonic_time();
 
-    static float confidence_threshold = 0.2;
+    float confidence_threshold = 0.2;
 
     TfLiteTensor *output_locations =
         interpreter->tensor(interpreter->outputs()[0]);

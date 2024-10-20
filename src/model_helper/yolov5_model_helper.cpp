@@ -1,4 +1,4 @@
-#include "model_helper/model_helper.h"
+#include "model_helper/yolov5_model_helper.h"
 #include "tensor_data.h"
 #include "image_utils.h"
 

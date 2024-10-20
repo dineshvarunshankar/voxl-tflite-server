@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
     set_delegate(&opt_);
     initialize_model_settings(model, delegate, &model_name, &model_category, &do_normalize, &custom_post);
 
-    model_helper = create_model_helper(model_name, opt_, do_normalize);
+    model_helper = create_model_helper(model_name, model_category, opt_, do_normalize);
 
     // store cam name
     std::string full_path(input_pipe);

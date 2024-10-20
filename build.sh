@@ -47,7 +47,7 @@ case "$1" in
 		mkdir -p build
 		cd build
 		cmake -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_QRB5165} -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_QRB5165=${BUILD_QRB5165} -DCMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS} -std=c++14 -march=armv8-a" ${EXTRA_OPTS} ../
-		make -j$(nproc)
+		make -j4
 		cd ../
 		;;
 	native)

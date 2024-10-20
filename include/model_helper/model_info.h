@@ -1,13 +1,13 @@
 #ifndef MODEL_INFO_H
 #define MODEL_INFO_H
 
-#include <opencv2/opencv.hpp>
+// #include <opencv2/opencv.hpp>
 #include <string>
 #include <vector>
 #include <modal_pipe.h>
-#include <stdint.h>
+// #include <stdint.h>
 #include <memory>
-#include <opencv2/imgproc/types_c.h>
+// #include <opencv2/imgproc/types_c.h>
 #include "ai_detection.h"
 
 enum ModelName

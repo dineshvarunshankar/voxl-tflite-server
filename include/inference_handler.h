@@ -26,9 +26,11 @@ struct InferenceWorkerArgs
     ModelCategory model_category;
 };
 
-void set_delegate(DelegateOpt *opt);
-
-void initialize_model_settings(char *model, char *delegate, ModelName *model_type, ModelCategory *model_category, NormalizationType *norm_type, bool* custom_post);
+bool generic_object_detection_worker(ModelHelper *model_helper, cv::Mat &output_image, double last_inference_time, std::vector<ai_detection_t> &detections, TFLiteMessage *new_frame);
+bool generic_classification_worker(ModelHelper *model_helper, cv::Mat &output_image, double last_inference_time, int tensor_offset, TFLiteMessage *new_frame);
+bool generic_pose_worker(ModelHelper *model_helper, cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame);
+bool deep_lab_worker(ModelHelper *model_helper, cv::Mat &preprocessed_image, double last_inference_time, TFLiteMessage *new_frame);
+bool fast_depth_worker(ModelHelper *model_helper, cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame);
 
 void *inference_worker(void *data);
 

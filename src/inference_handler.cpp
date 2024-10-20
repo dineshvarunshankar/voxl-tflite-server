@@ -177,7 +177,7 @@ void *inference_worker(void *args)
     return nullptr;
 }
 
-static bool generic_object_detection_worker(ModelHelper *model_helper,
+bool generic_object_detection_worker(ModelHelper *model_helper,
                                             cv::Mat &output_image,
                                             double last_inference_time,
                                             std::vector<ai_detection_t> &detections,
@@ -202,7 +202,7 @@ static bool generic_object_detection_worker(ModelHelper *model_helper,
     return true;
 }
 
-static bool generic_classification_worker(ModelHelper *model_helper, cv::Mat &output_image, double last_inference_time, int tensor_offset, TFLiteMessage *new_frame)
+bool generic_classification_worker(ModelHelper *model_helper, cv::Mat &output_image, double last_inference_time, int tensor_offset, TFLiteMessage *new_frame)
 {
     auto params = std::make_unique<ClassificationModelParams>(tensor_offset);
 
@@ -215,7 +215,7 @@ static bool generic_classification_worker(ModelHelper *model_helper, cv::Mat &ou
     return true;
 }
 
-static bool generic_pose_worker(ModelHelper *model_helper, cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame)
+bool generic_pose_worker(ModelHelper *model_helper, cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame)
 {
     if (!model_helper->postprocess(output_image, last_inference_time))
         return false;
@@ -225,7 +225,7 @@ static bool generic_pose_worker(ModelHelper *model_helper, cv::Mat &output_image
     return true;
 }
 
-static bool fast_depth_worker(ModelHelper *model_helper, cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame)
+bool fast_depth_worker(ModelHelper *model_helper, cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame)
 {
     auto params = std::make_unique<FastDepthModelParams>(new_frame->metadata);
 
@@ -237,7 +237,7 @@ static bool fast_depth_worker(ModelHelper *model_helper, cv::Mat &output_image, 
     return true;
 }
 
-static bool deep_lab_worker(ModelHelper *model_helper, cv::Mat &preprocessed_image, double last_inference_time, TFLiteMessage *new_frame)
+bool deep_lab_worker(ModelHelper *model_helper, cv::Mat &preprocessed_image, double last_inference_time, TFLiteMessage *new_frame)
 {
     auto params = std::make_unique<FastDepthModelParams>(new_frame->metadata);
 

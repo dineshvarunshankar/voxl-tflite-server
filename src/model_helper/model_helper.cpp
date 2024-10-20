@@ -1,50 +1,79 @@
 #include "model_helper/model_helper.h"
+#include "model_helper/posenet_model_helper.h"
+#include "model_helper/yolov8_model_helper.h"
+#include "model_helper/yolov5_model_helper.h"
+#include "model_helper/fast_depth_model_helper.h"
+#include "model_helper/generic_classification_model_helper.h"
+#include "model_helper/generic_object_detection_model_helper.h"
+#include "model_helper/deep_lab_model_helper.h"
 
 ModelHelper *create_model_helper(ModelName model_name,
                                  ModelCategory model_category,
                                  DelegateOpt opt_,
                                  NormalizationType do_normalize)
 {
+    // Switch based on model_name and model_category
+    switch (model_name)
+    {
+    case POSENET:
+    {
+        if (model_category == POSE)
+        {
+            return new PoseNetModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+        }
+        break;
+    }
+    case YOLOV5:
+    {
+        if (model_category == OBJECT_DETECTION)
+        {
+            return new YoloV5ModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+        }
+        break;
+    }
+    case YOLOV8:
+    {
+        if (model_category == OBJECT_DETECTION)
+        {
+            return new YoloV8ModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+        }
+        break;
+    }
+    case MOBILE_NET:
+    {
+        if (model_category == OBJECT_DETECTION)
+        {
+            return new GenericObjectDetectionModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+        }
+        else if (model_category == CLASSIFICATION)
+        {
+            return new GenericClassificationModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+        }
+        break;
+    }
+    case FAST_DEPTH:
+    {
+        if (model_category == MONO_DEPTH)
+        {
+            return new FastDepthModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+        }
+        break;
+    }
+    case DEEPLAB:
+    {
+        if (model_category == SEGMENTATION)
+        {   
+            return new DeepLabModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+        }
+    }
 
-    std::map<std::pair<ModelName, ModelCategory>, std::function<ModelHelper *()>> model_helper_factory_map = {
-        {{MOBILE_NET, ModelCategory::OBJECT_DETECTION}, [&]()
-         {
-             return new GenericObjectDetectionModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
-         }},
-        {{MOBILE_NET, ModelCategory::CLASSIFICATION}, [&]()
-         {
-             return new GenericClassificationModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
-         }},
-        {{DEEPLAB, ModelCategory::SEGMENTATION}, [&]()
-         {
-             return new DeepLabModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
-         }},
-        {{EFFICIENT_NET, ModelCategory::CLASSIFICATION}, [&]()
-         {
-             return new GenericClassificationModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
-         }},
-        {{POSENET, ModelCategory::POSE}, [&]()
-         {
-             return new PoseNetModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
-         }},
-        {{FAST_DEPTH, ModelCategory::MONO_DEPTH}, [&]()
-         {
-             return new FastDepthModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
-         }},
-        {{YOLOV5, ModelCategory::OBJECT_DETECTION}, [&]()
-         {
-             return new YoloV5ModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
-         }},
-        {{YOLOV8, ModelCategory::OBJECT_DETECTION}, [&]()
-         {
-             return new YoloV8ModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
-         }},
-    };
+    default:
+        fprintf(stderr, "Unsupported model type\n");
+        return nullptr;
+    }
 
-    std::pair<ModelName, ModelCategory> model_key = std::make_pair(model_name, model_category);
-    return model_helper_factory_map[model_key](); 
+    return nullptr;
 }
-
 ModelHelper::ModelHelper(char *model_file, char *labels_file,
                          DelegateOpt delegate_choice, bool _en_debug,
                          bool _en_timing, NormalizationType _do_normalize)

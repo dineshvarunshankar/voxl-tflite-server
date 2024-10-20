@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "config_file.h"
 
+
 // Function to load labels from a file and ensure the list is padded to a multiple of 16
 TfLiteStatus ReadLabelsFile(char *file_name, std::vector<std::string> *result,
                             size_t *found_label_count)
