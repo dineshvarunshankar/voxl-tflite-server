@@ -11,6 +11,34 @@ ModelHelper *create_model_helper(ModelName model_name,
          {
              return new GenericObjectDetectionModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
          }},
+        {{MOBILE_NET, ModelCategory::CLASSIFICATION}, [&]()
+         {
+             return new GenericClassificationModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+         }},
+        {{DEEPLAB, ModelCategory::SEGMENTATION}, [&]()
+         {
+             return new DeepLabModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+         }},
+        {{EFFICIENT_NET, ModelCategory::CLASSIFICATION}, [&]()
+         {
+             return new GenericClassificationModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+         }},
+        {{POSENET, ModelCategory::POSE}, [&]()
+         {
+             return new PoseNetModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+         }},
+        {{FAST_DEPTH, ModelCategory::MONO_DEPTH}, [&]()
+         {
+             return new FastDepthModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+         }},
+        {{YOLOV5, ModelCategory::OBJECT_DETECTION}, [&]()
+         {
+             return new YoloV5ModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+         }},
+        {{YOLOV8, ModelCategory::OBJECT_DETECTION}, [&]()
+         {
+             return new YoloV8ModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+         }},
     };
 
     std::pair<ModelName, ModelCategory> model_key = std::make_pair(model_name, model_category);

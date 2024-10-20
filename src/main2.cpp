@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
         // create the server pipe
         pipe_server_create(IMAGE_CH, image_pipe, 0);
 
-        if (model_category_map[model_name] == OBJECT_DETECTION)
+        if (model_category == OBJECT_DETECTION)
         {
             // initialize the detection pipe only if we are running a detection
             // model

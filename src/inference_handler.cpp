@@ -102,6 +102,7 @@ void *inference_worker(void *args)
 
         case POSENET:
         {
+            // potentially redundant checks but kept them in anyway
             if (model_category == POSE)
             {
                 if (!generic_pose_worker(model_helper, output_image, last_inference_time, new_frame))
@@ -117,6 +118,50 @@ void *inference_worker(void *args)
                 if (!fast_depth_worker(model_helper, output_image, last_inference_time, new_frame))
                     continue;
             }
+            // Handle other categories if any
+        }
+
+        case DEEPLAB:
+        {
+            if (model_category == SEGMENTATION)
+            {
+                if (!deep_lab_worker(model_helper, preprocessed_image, last_inference_time, new_frame))
+                    continue;
+            }
+            // Handle other categories if any
+        }
+
+        case EFFICIENT_NET:
+        {
+            if (model_category == CLASSIFICATION)
+            {
+                int tensor_offset = 0;
+                if (!generic_classification_worker(model_helper, output_image, last_inference_time, tensor_offset, new_frame))
+                    continue;
+            }
+            // Handle other categories if any
+        }
+
+        case YOLOV5:
+        {
+            if (model_category == OBJECT_DETECTION)
+            {
+                std::vector<ai_detection_t> detections;
+                if (!generic_object_detection_worker(model_helper, output_image, last_inference_time, detections, new_frame))
+                    continue;
+            }
+            // Handle other categories if any
+        }
+
+        case YOLOV8:
+        {
+            if (model_category == OBJECT_DETECTION)
+            {
+                std::vector<ai_detection_t> detections;
+                if (!generic_object_detection_worker(model_helper, output_image, last_inference_time, detections, new_frame))
+                    continue;
+            }
+            // Handle other categories if any
         }
 
         default:
@@ -189,5 +234,21 @@ static bool fast_depth_worker(ModelHelper *model_helper, cv::Mat &output_image, 
     new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
     pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata,
                                    (char *)output_image.data);
+    return true;
+}
+
+static bool deep_lab_worker(ModelHelper *model_helper, cv::Mat &preprocessed_image, double last_inference_time, TFLiteMessage *new_frame)
+{
+    auto params = std::make_unique<FastDepthModelParams>(new_frame->metadata);
+
+    // Segmentation is a special case here
+    // instead of passing the full dimension "output_image", we pass the
+    // preprocessed_image back then, the model output and overlay image
+    // are the same dims so we can easily blend the two
+    if (!model_helper->postprocess(preprocessed_image, last_inference_time, params.get()))
+        return false;
+    new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
+    pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata,
+                                   (char *)preprocessed_image.data);
     return true;
 }

@@ -33,8 +33,6 @@ enum ModelCategory
     POSE
 };
 
-extern std::map<ModelName, ModelCategory> model_category_map;
-
 class GenericObjectDetectionModelParams
 {
 public:
@@ -61,6 +59,15 @@ public:
 
     FastDepthModelParams(camera_image_metadata_t &meta_)
         : meta(meta_) {} 
+};
+
+class DeepLabModelParams
+{
+public:
+    camera_image_metadata_t &meta;
+
+    DeepLabModelParams(camera_image_metadata_t &meta_)
+        : meta(meta_) {}
 };
 
 #endif

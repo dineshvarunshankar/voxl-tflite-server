@@ -5,7 +5,18 @@
 GenericClassificationModelHelper::GenericClassificationModelHelper(char *model_file, char *labels_file,
                                                                    DelegateOpt delegate_choice, bool _en_debug,
                                                                    bool _en_timing, NormalizationType _do_normalize)
-    : ModelHelper(model_file, labels_file, delegate_choice, _en_debug, _en_timing, _do_normalize) {}
+    : ModelHelper(model_file, labels_file, delegate_choice, _en_debug, _en_timing, _do_normalize)
+{
+    if (labels.empty())
+    {
+        if (ReadLabelsFile(labels_location, &labels, &label_count) !=
+            kTfLiteOk)
+        {
+            fprintf(stderr, "ERROR: Unable to read labels file\n");
+            exit(-1);
+        }
+    }
+}
 
 bool GenericClassificationModelHelper::postprocess(cv::Mat &output_image, double last_inference_time, void *input_params)
 {
@@ -19,16 +30,6 @@ bool GenericClassificationModelHelper::postprocess(cv::Mat &output_image, double
 
     static std::vector<std::string> labels;
     static size_t label_count;
-
-    if (labels.empty())
-    {
-        if (ReadLabelsFile(labels_location, &labels, &label_count) !=
-            kTfLiteOk)
-        {
-            fprintf(stderr, "ERROR: Unable to read labels file\n");
-            return false;
-        }
-    }
 
     TfLiteTensor *output_locations =
         interpreter->tensor(interpreter->outputs()[0]);
