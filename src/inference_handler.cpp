@@ -98,6 +98,7 @@ void *inference_worker(void *args)
             }
 
             // Handle other categories if any
+            break;
         }
 
         case POSENET:
@@ -109,6 +110,7 @@ void *inference_worker(void *args)
                     continue;
             }
             // Handle other categories if any
+            break;
         }
 
         case FAST_DEPTH:
@@ -119,6 +121,7 @@ void *inference_worker(void *args)
                     continue;
             }
             // Handle other categories if any
+            break;
         }
 
         case DEEPLAB:
@@ -129,6 +132,7 @@ void *inference_worker(void *args)
                     continue;
             }
             // Handle other categories if any
+            break;
         }
 
         case EFFICIENT_NET:
@@ -140,6 +144,7 @@ void *inference_worker(void *args)
                     continue;
             }
             // Handle other categories if any
+            break;
         }
 
         case YOLOV5:
@@ -151,6 +156,7 @@ void *inference_worker(void *args)
                     continue;
             }
             // Handle other categories if any
+            break;
         }
 
         case YOLOV8:
@@ -162,6 +168,7 @@ void *inference_worker(void *args)
                     continue;
             }
             // Handle other categories if any
+            break;
         }
 
         default:
