@@ -40,14 +40,14 @@ case "$1" in
 		cd build64
         BUILD_QRB5165="OFF"
 		cmake -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_APQ8096_64} -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_QRB5165=${BUILD_QRB5165} -DCMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS} -std=c++11 -march=armv8-a -L  /usr/aarch64-linux-gnu-2.23/lib -I  /usr/aarch64-linux-gnu-2.23/include" ${EXTRA_OPTS} ../
-		make -j$(nproc)
+		make -j$(( $(nproc) / 2 )
 		cd ../
 		;;
 	qrb5165)
 		mkdir -p build
 		cd build
 		cmake -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_QRB5165} -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_QRB5165=${BUILD_QRB5165} -DCMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS} -std=c++14 -march=armv8-a" ${EXTRA_OPTS} ../
-		make -j4
+		make -j$(( $(nproc) / 2 )
 		cd ../
 		;;
 	native)
@@ -55,7 +55,7 @@ case "$1" in
 		cd build
         BUILD_QRB5165="OFF"
 		cmake ${EXTRA_OPTS} ../
-		make -j$(nproc)
+		make -j$(( $(nproc) / 2 )
 		cd ../
 		;;
 
