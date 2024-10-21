@@ -18,6 +18,8 @@ YoloV5ModelHelper::YoloV5ModelHelper(char *model_file, char *labels_file,
     }
 }
 
+constexpr int32_t YoloV5ModelHelper::kGridScaleList[3];
+
 bool YoloV5ModelHelper::postprocess(cv::Mat &output_image, double last_inference_time, void *input_params)
 {
     GenericObjectDetectionModelParams *params = static_cast<GenericObjectDetectionModelParams *>(input_params);
