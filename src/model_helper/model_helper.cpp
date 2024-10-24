@@ -67,11 +67,15 @@ ModelHelper *create_model_helper(ModelName model_name,
         }
     }
 
-    default:
-        fprintf(stderr, "Unsupported model type\n");
-        return nullptr;
+    case EFFICIENT_NET:
+    {
+        if (model_category == CLASSIFICATION)
+        {
+            return new GenericClassificationModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+        }
     }
-
+    }
+    fprintf(stderr, "Unsupported model type\n");
     return nullptr;
 }
 ModelHelper::ModelHelper(char *model_file, char *labels_file,
@@ -309,7 +313,6 @@ bool ModelHelper::run_inference(cv::Mat preprocessed_image,
     // Get input dimension from the input tensor metadata assuming one input
     // only
     int input = interpreter->inputs()[0];
-
 
     // manually fill tensor with image data, specific to input format
     switch (interpreter->tensor(input)->type)
