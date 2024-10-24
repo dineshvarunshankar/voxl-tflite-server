@@ -7,6 +7,7 @@ YoloV8ModelHelper::YoloV8ModelHelper(char *model_file, char *labels_file,
                                      bool _en_timing, NormalizationType _do_normalize)
     : ModelHelper(model_file, labels_file, delegate_choice, _en_debug, _en_timing, _do_normalize)
 {
+
     if (labels.empty())
     {
         if (ReadLabelsFile(labels_location, &labels, &label_count) !=
@@ -142,10 +143,34 @@ bool YoloV8ModelHelper::postprocess(cv::Mat &output_image, double last_inference
     return true;
 }
 
+bool YoloV8ModelHelper::run_inference(cv::Mat preprocessed_image,
+                                      double *last_inference_time)
+{
+    start_time = rc_nanos_monotonic_time();
+    int input = interpreter->inputs()[0];
+    float *input_data = interpreter->typed_tensor<float>(input);
+    std::memcpy(input_data, preprocessed_image.data, sizeof(float) * 640 * 640 * 3);
+
+    if (interpreter->Invoke() != kTfLiteOk)
+    {
+        std::cerr << "Failed to invoke tflite interpreter." << std::endl;
+        return false;
+    }
+    int64_t end_time = rc_nanos_monotonic_time();
+
+    if (en_timing)
+        total_inference_time += ((end_time - start_time) / 1000000.);
+    if (last_inference_time != nullptr)
+        *last_inference_time = ((double)(end_time - start_time) / 1000000.);
+
+    return true;
+}
+
 bool YoloV8ModelHelper::preprocess_image(camera_image_metadata_t &meta,
                                          char *frame, cv::Mat &preprocessed_image,
                                          cv::Mat &output_image)
 {
+
     start_time = rc_nanos_monotonic_time();
     num_frames_processed++;
 
@@ -224,7 +249,6 @@ bool YoloV8ModelHelper::preprocess_image(camera_image_metadata_t &meta,
         meta.stride = (meta.width * 3);
     }
     break;
-
     case IMAGE_FORMAT_STEREO_RAW8:
         meta.format = IMAGE_FORMAT_RAW8;
     case IMAGE_FORMAT_RAW8:
@@ -242,14 +266,12 @@ bool YoloV8ModelHelper::preprocess_image(camera_image_metadata_t &meta,
         cv::merge(in, 3, preprocessed_image);
     }
     break;
-
     default:
         fprintf(stderr,
                 "Unexpected image format %d received! Exiting now.\n",
                 meta.format);
         return false;
     }
-
     // Now assuming the shape of preprocessed_image is (model_height, model_width, 3)
     // with height and width being 640 each in case of yolov8
 

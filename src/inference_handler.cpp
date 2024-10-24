@@ -3,6 +3,8 @@
 // pass in the pointer to the subclass here
 void *inference_worker(void *args)
 {
+
+
     InferenceWorkerArgs *worker_args = static_cast<InferenceWorkerArgs *>(args);
     ModelHelper *model_helper = worker_args->model_helper;
     ModelName model_name = worker_args->model_name;
@@ -37,7 +39,6 @@ void *inference_worker(void *args)
     {
         perror("pthread_getaffinity_np");
     }
-    printf("Camera processing thread is now locked to the following cores:");
     for (int j = 0; j < CPU_SETSIZE; j++)
     {
         if (CPU_ISSET(j, &cpuset))
@@ -52,11 +53,11 @@ void *inference_worker(void *args)
 
     while (main_running)
     {
-
         if (queue_index == model_helper->camera_queue.insert_idx)
         {
             std::unique_lock<std::mutex> lock(model_helper->cond_mutex);
             model_helper->cond_var.wait(lock);
+
             continue;
         }
         // grab the frame and bump our queue index, making sure its within queue
@@ -73,8 +74,10 @@ void *inference_worker(void *args)
 
         double last_inference_time = 0;
 
-        if (!model_helper->run_inference(preprocessed_image, &last_inference_time))
+        if (!model_helper->run_inference(preprocessed_image, &last_inference_time)) {
+
             continue;
+        }
 
         new_frame->metadata.format = new_format;
 
@@ -190,6 +193,7 @@ bool generic_object_detection_worker(ModelHelper *model_helper,
                                             std::vector<ai_detection_t> &detections,
                                             TFLiteMessage *new_frame)
 {
+
     auto params = std::make_unique<GenericObjectDetectionModelParams>(detections);
 
     if (!model_helper->postprocess(output_image, last_inference_time, params.get()))

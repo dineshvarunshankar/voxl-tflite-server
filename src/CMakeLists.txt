@@ -11,11 +11,15 @@ if(BUILD_QRB5165)
     add_definitions(-DBUILD_QRB5165)
 endif()
 
-# Enable compile optimizations
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fsee -fomit-frame-pointer -fno-signed-zeros -fno-math-errno -funroll-loops")
-# Enable debug flags (use if you want to debug in gdb)
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -Wall -Wuninitialized -Wmaybe-uninitialized -fno-omit-frame-pointer")
+if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -Wall -Wuninitialized -Wmaybe-uninitialized -fno-omit-frame-pointer")
+elseif(CMAKE_BUILD_TYPE STREQUAL "RELEASE")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fsee -fomit-frame-pointer -fno-signed-zeros -fno-math-errno -funroll-loops")
+endif()
 
+
+# Enable compile optimizations
+# Enable debug flags (use if you want to debug in gdb)
 # Build from all source files
 file(GLOB_RECURSE all_src_files *.c*)
 
@@ -24,8 +28,8 @@ add_executable(${TARGET}
 )
 
 include_directories(
-    ../include
-    ..include/model_helper
+    ../include/
+    ..include/model_helper/
     /usr/include/opencv4/
 
     # # apq8096 SPECIFIC

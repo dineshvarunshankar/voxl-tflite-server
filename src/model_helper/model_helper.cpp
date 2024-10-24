@@ -62,7 +62,7 @@ ModelHelper *create_model_helper(ModelName model_name,
     case DEEPLAB:
     {
         if (model_category == SEGMENTATION)
-        {   
+        {
             return new DeepLabModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
         }
     }
@@ -134,12 +134,15 @@ ModelHelper::ModelHelper(char *model_file, char *labels_file,
     model_height = dims->data[1];
     model_width = dims->data[2];
     model_channels = dims->data[3];
+
+    printf("Successfully built interpreter\n");
 }
 
 bool ModelHelper::preprocess_image(camera_image_metadata_t &meta,
                                    char *frame, cv::Mat &preprocessed_image,
                                    cv::Mat &output_image)
 {
+
     start_time = rc_nanos_monotonic_time();
     num_frames_processed++;
 
@@ -306,6 +309,7 @@ bool ModelHelper::run_inference(cv::Mat preprocessed_image,
     // Get input dimension from the input tensor metadata assuming one input
     // only
     int input = interpreter->inputs()[0];
+
 
     // manually fill tensor with image data, specific to input format
     switch (interpreter->tensor(input)->type)

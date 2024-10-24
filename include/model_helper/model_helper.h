@@ -120,9 +120,14 @@ public:
                                   char *frame, cv::Mat &preprocessed_image,
                                   cv::Mat &output_image);
 
-    virtual bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params = nullptr) = 0;
+    // infernece method which invokes the tflite interpreter, also commons across most 
+    // classes
     virtual bool run_inference(cv::Mat preprocessed_image,
                                double *last_inference_time);
+    
+    // post process method, almost never common across classes except for 
+    // a few generic methods for certain problem types.
+    virtual bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params = nullptr) = 0;
 
     void print_summary_stats();
 

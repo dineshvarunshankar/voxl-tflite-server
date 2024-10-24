@@ -13,6 +13,8 @@ public:
     bool preprocess_image(camera_image_metadata_t &meta,
                           char *frame, cv::Mat &preprocessed_image,
                           cv::Mat &output_image) override;
+    bool run_inference(cv::Mat preprocessed_image,
+                        double *last_inference_time) override;
 
 private:
     std::vector<std::string> labels;
