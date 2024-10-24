@@ -28,8 +28,6 @@ bool GenericClassificationModelHelper::postprocess(cv::Mat &output_image, double
 
     start_time = rc_nanos_monotonic_time();
 
-    static std::vector<std::string> labels;
-    static size_t label_count;
 
     TfLiteTensor *output_locations =
         interpreter->tensor(interpreter->outputs()[0]);

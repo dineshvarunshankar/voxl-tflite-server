@@ -47,8 +47,6 @@ bool YoloV8ModelHelper::postprocess(cv::Mat &output_image, double last_inference
     cv::transpose(temp, temp);
     float *new_data = (float *)temp.data;
 
-    static std::vector<std::string> labels;
-    static size_t label_count;
 
     if (labels.empty())
     {

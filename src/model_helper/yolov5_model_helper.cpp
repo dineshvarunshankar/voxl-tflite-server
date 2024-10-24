@@ -31,8 +31,7 @@ bool YoloV5ModelHelper::postprocess(cv::Mat &output_image, double last_inference
         interpreter->tensor(interpreter->outputs()[0]);
     float *output_tensor = TensorData<float>(output_locations, 0);
 
-    static std::vector<std::string> labels;
-    static size_t label_count;
+
     if (labels.empty())
     {
         if (ReadLabelsFile(labels_location, &labels, &label_count) !=

@@ -8,7 +8,7 @@
 
 // Function to load labels from a file and ensure the list is padded to a multiple of 16
 TfLiteStatus ReadLabelsFile(char *file_name, std::vector<std::string> *result,
-                            size_t *found_label_count)
+                            size_t *found_label_count = nullptr)
 {
     std::ifstream file(file_name);
 
@@ -25,7 +25,12 @@ TfLiteStatus ReadLabelsFile(char *file_name, std::vector<std::string> *result,
         result->push_back(line);
     }
 
-    *found_label_count = result->size();
+    // Only update the count if found_label_count is provided
+    // done to remove the unused variable warnings
+    if (found_label_count != nullptr)
+    {
+        *found_label_count = result->size();
+    }
     const int padding = 16;
 
     while (result->size() % padding)
