@@ -74,6 +74,14 @@ ModelHelper *create_model_helper(ModelName model_name,
             return new GenericClassificationModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
         }
     }
+    case PLACEHOLDER:
+    {
+        if (model_category == OBJECT_DETECTION)
+        {
+            return new GenericObjectDetectionModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+        }
+    }
+
     }
     fprintf(stderr, "Unsupported model type\n");
     return nullptr;
