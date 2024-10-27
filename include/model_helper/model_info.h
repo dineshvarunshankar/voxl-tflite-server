@@ -19,6 +19,7 @@ enum ModelName
     POSENET,
     YOLOV5,
     YOLOV8,
+    YOLOV11,
     PLACEHOLDER
 };
 

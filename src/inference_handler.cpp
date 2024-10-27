@@ -4,7 +4,6 @@
 void *inference_worker(void *args)
 {
 
-
     InferenceWorkerArgs *worker_args = static_cast<InferenceWorkerArgs *>(args);
     ModelHelper *model_helper = worker_args->model_helper;
     ModelName model_name = worker_args->model_name;
@@ -74,7 +73,8 @@ void *inference_worker(void *args)
 
         double last_inference_time = 0;
 
-        if (!model_helper->run_inference(preprocessed_image, &last_inference_time)) {
+        if (!model_helper->run_inference(preprocessed_image, &last_inference_time))
+        {
 
             continue;
         }
@@ -99,7 +99,6 @@ void *inference_worker(void *args)
                 if (!generic_classification_worker(model_helper, output_image, last_inference_time, tensor_offset, new_frame))
                     continue;
             }
-
             // Handle other categories if any
             break;
         }
@@ -174,6 +173,17 @@ void *inference_worker(void *args)
             break;
         }
 
+        case YOLOV11: 
+        {
+            // same api as yolov8
+            if (model_category == OBJECT_DETECTION) {
+                std::vector<ai_detection_t> detections;
+                if (!generic_object_detection_worker(model_helper, output_image, last_inference_time, detections, new_frame)) continue;
+            }
+            // Handle other categories if any
+            break;
+        }
+
         default:
         {
             // Handle unsupported model types or an error case
@@ -187,11 +197,13 @@ void *inference_worker(void *args)
     return nullptr;
 }
 
+
+// TODO: Encapsulate these workers as methods include their params classes 
 bool generic_object_detection_worker(ModelHelper *model_helper,
-                                            cv::Mat &output_image,
-                                            double last_inference_time,
-                                            std::vector<ai_detection_t> &detections,
-                                            TFLiteMessage *new_frame)
+                                     cv::Mat &output_image,
+                                     double last_inference_time,
+                                     std::vector<ai_detection_t> &detections,
+                                     TFLiteMessage *new_frame)
 {
 
     auto params = std::make_unique<GenericObjectDetectionModelParams>(detections);

@@ -214,7 +214,8 @@ options=("Mobilenet - object detection"
          "Posenet - pose estimation"
          "Yolov5 - object detection"
          "Yolov8 - object detection (coco dataset)"
-         "Yolov8 - object detection (custom)")
+         "Yolov8 - object detection (custom)"
+		 "Yolov11 - object detection (coco dataset)")
 
 PS3="Enter the number corresponding to the model you want to select: "
 
@@ -263,6 +264,11 @@ select opt in "${options[@]}" "Quit"; do
 			set_param_bool true
             set_param_string labels "$custom_labels_path"
             break;;
+		9) 
+            set_param_string model "/usr/bin/dnn/yolov11n_float16.tflite"
+            set_param_string labels "/usr/bin/dnn/yolov5_labels.txt"
+			break;;
+
         [Qq]*)
             echo "Quitting..."
             exit 0;;

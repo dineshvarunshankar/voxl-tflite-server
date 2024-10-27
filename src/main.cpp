@@ -26,7 +26,7 @@ static void _camera_disconnect_cb(__attribute__((unused)) int ch,
 static void _camera_connect_cb(__attribute__((unused)) int ch,
                                __attribute__((unused)) void *context);
 static void set_delegate(DelegateOpt *opt);
-static void initialize_model_settings(char *model, char *delegate, ModelName *model_name, ModelCategory *model_category, NormalizationType *norm_type, bool *custom_post);
+static void initialize_model_settings(char *model, char *delegate, ModelName *model_name, ModelCategory *model_category, NormalizationType *norm_type);
 
 int main(int argc, char *argv[])
 {
@@ -77,14 +77,14 @@ int main(int argc, char *argv[])
     ModelCategory model_category;
     DelegateOpt opt_;
     NormalizationType do_normalize = NONE;
-    bool custom_post = false;
+
 
     ////////////////////////////////////////////////////////////////////////////////
     // initialize InferenceHelper
     ////////////////////////////////////////////////////////////////////////////////
 
     set_delegate(&opt_);
-    initialize_model_settings(model, delegate, &model_name, &model_category, &do_normalize, &custom_post);
+    initialize_model_settings(model, delegate, &model_name, &model_category, &do_normalize);
 
     model_helper = create_model_helper(model_name, model_category, opt_, do_normalize);
 
@@ -283,7 +283,7 @@ static void set_delegate(DelegateOpt *opt)
         *opt = NNAPI;
 }
 
-static void initialize_model_settings(char *model, char *delegate, ModelName *model_name, ModelCategory *model_category, NormalizationType *norm_type, bool *custom_post)
+static void initialize_model_settings(char *model, char *delegate, ModelName *model_name, ModelCategory *model_category, NormalizationType *norm_type)
 {
 
     // set model type
@@ -344,14 +344,19 @@ static void initialize_model_settings(char *model, char *delegate, ModelName *mo
         *model_name = YOLOV5;
         *model_category = OBJECT_DETECTION;
         *norm_type = HARD_DIVISION;
-        *custom_post = true;
     }
     else if (!strcmp(model, "/usr/bin/dnn/yolov8n_float16.tflite"))
     {
         *model_name = YOLOV8;
         *model_category = OBJECT_DETECTION;
         *norm_type = HARD_DIVISION;
-        *custom_post = true;
+
+    }
+    else if (!strcmp(model, "/usr/bin/dnn/yolov11n_float16.tflite"))
+    {
+        *model_name = YOLOV11;
+        *model_category = OBJECT_DETECTION;
+        *norm_type = HARD_DIVISION;
     }
     else
     {

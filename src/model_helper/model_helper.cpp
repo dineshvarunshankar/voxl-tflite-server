@@ -74,6 +74,15 @@ ModelHelper *create_model_helper(ModelName model_name,
             return new GenericClassificationModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
         }
     }
+
+    case YOLOV11:
+    {
+        if (model_category == OBJECT_DETECTION)
+        {
+            // The usage for v8 and v11 is the same so the same api is used
+            return new YoloV8ModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+        }
+    }
     case PLACEHOLDER:
     {
         if (model_category == OBJECT_DETECTION)
@@ -81,7 +90,6 @@ ModelHelper *create_model_helper(ModelName model_name,
             return new GenericObjectDetectionModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
         }
     }
-
     }
     fprintf(stderr, "Unsupported model type\n");
     return nullptr;
