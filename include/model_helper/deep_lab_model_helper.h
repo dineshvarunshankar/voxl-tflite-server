@@ -10,11 +10,13 @@ public:
                        DelegateOpt delegate_choice, bool _en_debug,
                        bool _en_timing, NormalizationType _do_normalize);
     bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params) override;
+    bool worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params) override;
 
 private:
     static constexpr int right_pixel_border = 110;
     std::vector<std::string> labels;
     size_t label_count;
+    camera_image_metadata_t new_frame_metadata;
 };
 
 #endif

@@ -4,9 +4,10 @@
 
 GenericClassificationModelHelper::GenericClassificationModelHelper(char *model_file, char *labels_file,
                                                                    DelegateOpt delegate_choice, bool _en_debug,
-                                                                   bool _en_timing, NormalizationType _do_normalize)
+                                                                   bool _en_timing, NormalizationType _do_normalize, int tensor_offset)
     : ModelHelper(model_file, labels_file, delegate_choice, _en_debug, _en_timing, _do_normalize)
 {
+    this->tensor_offset = tensor_offset;
     if (labels.empty())
     {
         if (ReadLabelsFile(labels_location, &labels, &label_count) !=
@@ -18,16 +19,26 @@ GenericClassificationModelHelper::GenericClassificationModelHelper(char *model_f
     }
 }
 
+bool GenericClassificationModelHelper::worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params)
+{
+    if (!postprocess(output_image, last_inference_time, input_params))
+        return false;
+
+    new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
+    pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata,
+                                   (char *)output_image.data);
+    return true;
+}
+
 bool GenericClassificationModelHelper::postprocess(cv::Mat &output_image, double last_inference_time, void *input_params)
 {
-    ClassificationModelParams *params = static_cast<ClassificationModelParams *>(input_params);
+    // ClassificationModelParams *params = static_cast<ClassificationModelParams *>(input_params);
 
-    int tensor_offset = params->tensor_offset;
+    // int tensor_offset = params->tensor_offset;
 
     int num_of_classes = 1000;
 
     start_time = rc_nanos_monotonic_time();
-
 
     TfLiteTensor *output_locations =
         interpreter->tensor(interpreter->outputs()[0]);

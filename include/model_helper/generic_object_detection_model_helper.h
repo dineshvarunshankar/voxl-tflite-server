@@ -8,6 +8,7 @@ class GenericObjectDetectionModelHelper : public ModelHelper
 private:
     std::vector<std::string> labels;
     size_t label_count;
+    std::vector<ai_detection_t> detections_vector;
 
 public:
     GenericObjectDetectionModelHelper(char *model_file, char *labels_file,
@@ -15,6 +16,7 @@ public:
                                       bool _en_timing, NormalizationType _do_normalize);
 
     bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params) override;
+    bool worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params) override;
 };
 
 #endif

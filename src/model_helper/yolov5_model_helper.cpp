@@ -2,6 +2,8 @@
 #include "tensor_data.h"
 #include "image_utils.h"
 
+constexpr int32_t YoloV5ModelHelper::kGridScaleList[3];
+
 YoloV5ModelHelper::YoloV5ModelHelper(char *model_file, char *labels_file,
                                      DelegateOpt delegate_choice, bool _en_debug,
                                      bool _en_timing, NormalizationType _do_normalize)
@@ -18,19 +20,36 @@ YoloV5ModelHelper::YoloV5ModelHelper(char *model_file, char *labels_file,
     }
 }
 
-constexpr int32_t YoloV5ModelHelper::kGridScaleList[3];
+bool YoloV5ModelHelper::worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params)
+{
+    if (!postprocess(output_image, last_inference_time, input_params))
+        return false;
+
+    if (!detections_vector.empty())
+    {
+        for (unsigned int i = 0; i < detections_vector.size(); i++)
+        {
+            pipe_server_write(DETECTION_CH, (char *)&detections_vector[i], sizeof(ai_detection_t));
+        }
+    }
+    new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
+    pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata, (char *)output_image.data);
+
+    return true;
+}
 
 bool YoloV5ModelHelper::postprocess(cv::Mat &output_image, double last_inference_time, void *input_params)
 {
-    GenericObjectDetectionModelParams *params = static_cast<GenericObjectDetectionModelParams *>(input_params);
-    std::vector<ai_detection_t> &detections_vector = params->detections_vector;
+    // declare a temp vector and then swap with the class member
+    // avoids the vector clearing overhead
+    std::vector<ai_detection_t> temp_vector;
+
     start_time = rc_nanos_monotonic_time();
 
     // yolo has just one fat float output tensor
     TfLiteTensor *output_locations =
         interpreter->tensor(interpreter->outputs()[0]);
     float *output_tensor = TensorData<float>(output_locations, 0);
-
 
     if (labels.empty())
     {
@@ -82,8 +101,10 @@ bool YoloV5ModelHelper::postprocess(cv::Mat &output_image, double last_inference
         curr_detection.y_max = bbox.y + bbox.h;
 
         // fill the vector
-        detections_vector.push_back(curr_detection);
+        temp_vector.push_back(curr_detection);
     }
+
+    detections_vector.swap(temp_vector);
 
     draw_fps(output_image, last_inference_time, cv::Point(0, 0), 0.5, 2,
              cv::Scalar(0, 0, 0), cv::Scalar(180, 180, 180), true);
@@ -168,8 +189,8 @@ void YoloV5ModelHelper::get_bbox(const float *data, float scale_x, float scale_y
 }
 
 void YoloV5ModelHelper::nms(std::vector<b_box> &bbox_list,
-                std::vector<b_box> &bbox_nms_list, float threshold_nms_iou,
-                bool check_class_id)
+                            std::vector<b_box> &bbox_nms_list, float threshold_nms_iou,
+                            bool check_class_id)
 {
     std::sort(bbox_list.begin(), bbox_list.end(),
               [](b_box const &lhs, b_box const &rhs)

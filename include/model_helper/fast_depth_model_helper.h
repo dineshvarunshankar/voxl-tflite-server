@@ -10,6 +10,10 @@ public:
                          DelegateOpt delegate_choice, bool _en_debug,
                          bool _en_timing, NormalizationType _do_normalize);
     bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params) override;
+    bool worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params) override;
+
+private: 
+    camera_image_metadata_t new_frame_metadata;
 };
 
 #endif

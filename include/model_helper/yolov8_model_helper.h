@@ -14,11 +14,14 @@ public:
                           char *frame, cv::Mat &preprocessed_image,
                           cv::Mat &output_image) override;
     bool run_inference(cv::Mat preprocessed_image,
-                        double *last_inference_time) override;
+                       double *last_inference_time) override;
+    bool worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params) override;
 
 private:
     std::vector<std::string> labels;
     size_t label_count;
+    std::vector<ai_detection_t> detections_vector;
+
     const float model_score_threshold = 0.45;
     const float model_confidence_threshold = 0.25;
     const float model_nms_threshold = 0.5;

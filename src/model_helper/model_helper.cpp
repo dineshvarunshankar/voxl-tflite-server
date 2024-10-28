@@ -27,6 +27,7 @@ ModelHelper *create_model_helper(ModelName model_name,
     {
         if (model_category == OBJECT_DETECTION)
         {
+
             return new YoloV5ModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
         }
         break;
@@ -35,6 +36,7 @@ ModelHelper *create_model_helper(ModelName model_name,
     {
         if (model_category == OBJECT_DETECTION)
         {
+
             return new YoloV8ModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
         }
         break;
@@ -47,7 +49,8 @@ ModelHelper *create_model_helper(ModelName model_name,
         }
         else if (model_category == CLASSIFICATION)
         {
-            return new GenericClassificationModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+            int tensor_offset = 1;
+            return new GenericClassificationModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize, tensor_offset);
         }
         break;
     }
@@ -71,7 +74,8 @@ ModelHelper *create_model_helper(ModelName model_name,
     {
         if (model_category == CLASSIFICATION)
         {
-            return new GenericClassificationModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+            int tensor_offset = 0;
+            return new GenericClassificationModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize, tensor_offset);
         }
     }
 

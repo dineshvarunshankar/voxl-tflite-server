@@ -9,13 +9,15 @@ class GenericClassificationModelHelper : public ModelHelper
 public:
     GenericClassificationModelHelper(char *model_file, char *labels_file,
                                      DelegateOpt delegate_choice, bool _en_debug,
-                                     bool _en_timing, NormalizationType _do_normalize);
+                                     bool _en_timing, NormalizationType _do_normalize, int tensor_offset);
 
     bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params) override;
+    bool worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params) override;
 
 private:
     std::vector<std::string> labels;
     size_t label_count;
+    int tensor_offset;
 };
 
 #endif

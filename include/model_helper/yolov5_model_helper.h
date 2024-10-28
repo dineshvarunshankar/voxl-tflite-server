@@ -10,6 +10,7 @@ public:
                       DelegateOpt delegate_choice, bool _en_debug,
                       bool _en_timing, NormalizationType _do_normalize);
     bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params) override;
+    bool worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params) override;
 
 private:
     std::vector<std::string> labels;
@@ -27,6 +28,8 @@ private:
 
     int32_t kElementNumOfAnchor;
     int32_t kNumberOfClass;
+
+    std::vector<ai_detection_t> detections_vector;
 
     struct b_box
     {

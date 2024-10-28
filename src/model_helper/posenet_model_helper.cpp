@@ -81,3 +81,13 @@ bool PoseNetModelHelper::postprocess(cv::Mat &output_image, double last_inferenc
 
     return true;
 }
+
+bool PoseNetModelHelper::worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params)
+{
+    if (!postprocess(output_image, last_inference_time, input_params))
+        return false;
+    new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
+    pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata,
+                                   (char *)output_image.data);
+    return true;
+}

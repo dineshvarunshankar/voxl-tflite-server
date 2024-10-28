@@ -29,10 +29,10 @@
 #include "tensorflow/lite/nnapi/nnapi_util.h"
 #endif
 
-
+#define DETECTION_CH 1
+#define IMAGE_CH 0
 #define MAX_IMAGE_SIZE 12441600
 #define QUEUE_SIZE 24 // max messages to be stored in queue
-
 #define NORMALIZATION_CONST 255.0f
 #define PIXEL_MEAN_GUESS 127.0f
 
@@ -128,7 +128,7 @@ public:
     // post process method, almost never common across classes except for 
     // a few generic methods for certain problem types.
     virtual bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params = nullptr) = 0;
-
+    virtual bool worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params = nullptr) = 0;
     void print_summary_stats();
 
     virtual ~ModelHelper() = default;
@@ -140,6 +140,7 @@ public:
 
     TFLiteCamQueue camera_queue; // camera message queue for the thread
 
+    cv::Mat *preprocessed_image; // added here mostly for the segmenation model but could be useful elsewhere
 protected:
     // Function to setup the delegate based on selection
     void setupDelegate(DelegateOpt delegate_choice);

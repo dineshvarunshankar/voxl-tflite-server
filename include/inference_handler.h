@@ -16,9 +16,6 @@
 #include "model_helper/model_helper.h"
 #include "model_helper/model_info.h"
 
-#define DETECTION_CH 1
-#define IMAGE_CH 0
-
 struct InferenceWorkerArgs
 {
     ModelHelper *model_helper;
