@@ -21,14 +21,21 @@ ModelHelper *create_model_helper(ModelName model_name,
         {
             return new PoseNetModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
         }
+        else
+        {
+            fprintf(stderr, "Unsupported category for the given model\n");
+        }
         break;
     }
     case YOLOV5:
     {
         if (model_category == OBJECT_DETECTION)
         {
-
             return new YoloV5ModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+        }
+        else
+        {
+            fprintf(stderr, "Unsupported category for the given model\n");
         }
         break;
     }
@@ -38,6 +45,10 @@ ModelHelper *create_model_helper(ModelName model_name,
         {
 
             return new YoloV8ModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+        }
+        else
+        {
+            fprintf(stderr, "Unsupported category for the given model\n");
         }
         break;
     }
@@ -52,6 +63,10 @@ ModelHelper *create_model_helper(ModelName model_name,
             int tensor_offset = 1;
             return new GenericClassificationModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize, tensor_offset);
         }
+                else
+        {
+            fprintf(stderr, "Unsupported category for the given model\n");
+        }
         break;
     }
     case FAST_DEPTH:
@@ -60,6 +75,10 @@ ModelHelper *create_model_helper(ModelName model_name,
         {
             return new FastDepthModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
         }
+        else
+        {
+            fprintf(stderr, "Unsupported category for the given model\n");
+        }
         break;
     }
     case DEEPLAB:
@@ -67,6 +86,10 @@ ModelHelper *create_model_helper(ModelName model_name,
         if (model_category == SEGMENTATION)
         {
             return new DeepLabModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+        }
+                else
+        {
+            fprintf(stderr, "Unsupported category for the given model\n");
         }
     }
 
@@ -77,6 +100,10 @@ ModelHelper *create_model_helper(ModelName model_name,
             int tensor_offset = 0;
             return new GenericClassificationModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize, tensor_offset);
         }
+        else
+        {
+            fprintf(stderr, "Unsupported category for the given model\n");
+        }
     }
 
     case YOLOV11:
@@ -86,16 +113,26 @@ ModelHelper *create_model_helper(ModelName model_name,
             // The usage for v8 and v11 is the same so the same api is used
             return new YoloV8ModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
         }
+                else
+        {
+            fprintf(stderr, "Unsupported category for the given model\n");
+        }
     }
+    // not sure about the utility of this enum
+    // might remove later
     case PLACEHOLDER:
     {
         if (model_category == OBJECT_DETECTION)
         {
             return new GenericObjectDetectionModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
         }
+        else
+        {
+            fprintf(stderr, "Unsupported category for the given model\n");
+        }
     }
     }
-    fprintf(stderr, "Unsupported model type\n");
+    fprintf(stderr, "Unsupported model\n");
     return nullptr;
 }
 ModelHelper::ModelHelper(char *model_file, char *labels_file,

@@ -108,12 +108,10 @@ int main(int argc, char *argv[])
 
     InferenceWorkerArgs *args = new InferenceWorkerArgs;
     args->model_helper = model_helper;
-    args->model_name = model_name;
 
     int ret = pthread_create(&(model_helper->thread), &thread_attributes, inference_worker, args);
     if (ret != 0)
     {
-        // Handle thread creation failure
         fprintf(stderr, "Error creating inference worker thread: %d\n", ret);
         delete args; // Clean up in case of failure
     }

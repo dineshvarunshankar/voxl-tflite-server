@@ -152,7 +152,7 @@ bool YoloV8ModelHelper::postprocess(cv::Mat &output_image, double last_inference
         curr_detection.x_max = boxes[idx].x + boxes[idx].width;
         curr_detection.y_max = boxes[idx].y + boxes[idx].height;
 
-        temp.push_back(curr_detection);
+        temp_vector.push_back(curr_detection);
     }
 
     detections_vector.swap(temp_vector);
