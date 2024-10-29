@@ -80,6 +80,7 @@ void *inference_worker(void *args)
 
         new_frame->metadata.format = new_format;
 
+        // sets up post processing and related operations 
         model_helper->worker(output_image, last_inference_time, new_frame);
     }
 
