@@ -64,10 +64,10 @@ void *inference_worker(void *args)
 
         cv::Mat preprocessed_image, output_image;
 
-        model_helper->preprocessed_image = &preprocessed_image;
         if (!model_helper->preprocess_image(new_frame->metadata, (char *)new_frame->image_pixels, preprocessed_image, output_image))
             continue;
 
+        model_helper->preprocessed_image = &preprocessed_image;
         int new_format = new_frame->metadata.format;
 
         double last_inference_time = 0;
