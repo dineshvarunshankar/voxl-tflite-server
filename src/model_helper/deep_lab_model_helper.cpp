@@ -28,6 +28,14 @@ DeepLabModelHelper::DeepLabModelHelper(char *model_file, char *labels_file,
 bool DeepLabModelHelper::worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params)
 {
     new_frame_metadata = new_frame->metadata;
+    // Segmentation is a special case here
+    // instead of passing the full dimension "output_image", we pass the
+    // preprocessed_image back then, the model output and overlay image
+    // are the same dims so we can easily blend the two
+
+    // passing output_image but it will not be used since preprocessed_image is already
+    // a class member
+
     if (!postprocess(output_image, last_inference_time, input_params))
         return false;
 
@@ -39,8 +47,8 @@ bool DeepLabModelHelper::worker(cv::Mat &output_image, double last_inference_tim
 
 bool DeepLabModelHelper::postprocess(cv::Mat &output_image, double last_inference_time, void *input_params)
 {
-    DeepLabModelParams *params = static_cast<DeepLabModelParams *>(input_params);
-    camera_image_metadata_t &meta = params->meta;
+    // DeepLabModelParams *params = static_cast<DeepLabModelParams *>(input_params);
+    // camera_image_metadata_t &meta = params->meta;
 
     start_time = rc_nanos_monotonic_time();
 
@@ -63,14 +71,14 @@ bool DeepLabModelHelper::postprocess(cv::Mat &output_image, double last_inferenc
     }
 
     // now blend the model input and output
-    cv::addWeighted(output_image, 0.75, temp, 0.25, 0, output_image);
+    cv::addWeighted(*preprocessed_image, 0.75, temp, 0.25, 0, *preprocessed_image);
     // add key overlay
-    cv::copyMakeBorder(output_image, output_image, 0, 0, 0, right_pixel_border,
+    cv::copyMakeBorder(*preprocessed_image, *preprocessed_image, 0, 0, 0, right_pixel_border,
                        cv::BORDER_CONSTANT);
 
     for (unsigned int i = 0; i < labels.size(); i++)
     {
-        cv::putText(output_image, labels[i], cv::Point(325, 16 * (i + 1)),
+        cv::putText(*preprocessed_image, labels[i], cv::Point(325, 16 * (i + 1)),
                     cv::FONT_HERSHEY_SIMPLEX, 0.4,
                     cv::Scalar(color_map[(i * 3)], color_map[(i * 3) + 1],
                                color_map[(i * 3) + 2]),
@@ -78,13 +86,13 @@ bool DeepLabModelHelper::postprocess(cv::Mat &output_image, double last_inferenc
     }
 
     // now, setup metadata since we modified the output image
-    meta.format = IMAGE_FORMAT_RGB;
-    meta.width = model_width + right_pixel_border;
-    meta.height = model_height;
-    meta.stride = meta.width * 3;
-    meta.size_bytes = meta.height * meta.width * 3;
+    new_frame_metadata.format = IMAGE_FORMAT_RGB;
+    new_frame_metadata.width = model_width + right_pixel_border;
+    new_frame_metadata.height = model_height;
+    new_frame_metadata.stride = new_frame_metadata.width * 3;
+    new_frame_metadata.size_bytes = new_frame_metadata.height * new_frame_metadata.width * 3;
 
-    draw_fps(output_image, last_inference_time, cv::Point(0, 0), 0.25, 0.4,
+    draw_fps(*preprocessed_image, last_inference_time, cv::Point(0, 0), 0.25, 0.4,
              cv::Scalar(0, 0, 0), cv::Scalar(180, 180, 180), true);
 
     if (en_timing)
