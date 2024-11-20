@@ -77,7 +77,7 @@ ModelHelper *create_model_helper(ModelName model_name,
         }
         else
         {
-            fprintf(stderr, "Unsupported category for the given model\n");
+            fprintf(stderr, "Unsupported category for the given model\n", model_category);
         }
         break;
     }
@@ -87,7 +87,7 @@ ModelHelper *create_model_helper(ModelName model_name,
         {
             return new DeepLabModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
         }
-                else
+        else
         {
             fprintf(stderr, "Unsupported category for the given model\n");
         }
@@ -113,7 +113,7 @@ ModelHelper *create_model_helper(ModelName model_name,
             // The usage for v8 and v11 is the same so the same api is used
             return new YoloV8ModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
         }
-                else
+        else
         {
             fprintf(stderr, "Unsupported category for the given model\n");
         }
@@ -139,6 +139,7 @@ ModelHelper::ModelHelper(char *model_file, char *labels_file,
                          DelegateOpt delegate_choice, bool _en_debug,
                          bool _en_timing, NormalizationType _do_normalize)
 {
+    printf("beginning of model helper\n");
     // Set the member variables
     en_debug = _en_debug;
     en_timing = _en_timing;

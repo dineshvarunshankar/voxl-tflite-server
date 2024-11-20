@@ -1,0 +1,534 @@
+debug_source.sh:  sshpass -p "$PASSWORD" rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" \
+debug_source.sh:  rsync -avz --delete "$LOCAL_WORKSPACE_DIR/$SUBDIR" "$REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR"
+debug_source.sh:if [ $? -eq 0 ]; then
+build.sh:## voxl-cross contains the following toolchains
+build.sh:TOOLCHAIN_APQ8096_32="/opt/cross_toolchain/arm-gnueabi-4.9.toolchain.cmake"
+build.sh:TOOLCHAIN_APQ8096_64="/opt/cross_toolchain/aarch64-gnu-4.9.toolchain.cmake"
+build.sh:TOOLCHAIN_QRB5165="/opt/cross_toolchain/aarch64-gnu-7.toolchain.cmake"
+build.sh:## this list is just for tab-completion
+build.sh:	echo "        Build 64-bit binaries for apq8096"
+build.sh:	echo "        Build 64-bit binaries for qrb5165"
+build.sh:		mkdir -p build64
+build.sh:		cmake -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_APQ8096_64} -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_QRB5165=${BUILD_QRB5165} -DCMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS} -std=c++11 -march=armv8-a -L  /usr/aarch64-linux-gnu-2.23/lib -I  /usr/aarch64-linux-gnu-2.23/include" ${EXTRA_OPTS} ../
+build.sh:		make -j$(nproc)
+build.sh:		mkdir -p build
+build.sh:		cmake -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_QRB5165} -DCMAKE_BUILD_TYPE=DEBUG -DBUILD_QRB5165=${BUILD_QRB5165} -DCMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS} -std=c++14 -march=armv8-a" ${EXTRA_OPTS} ../
+build.sh:		make -j$(( $(nproc) / 2 ))
+build.sh:		mkdir -p build
+build.sh:		make -j$(nproc)
+README.md:# voxl-tflite-server
+README.md:* libmodal-pipe
+README.md:* libmodal-json
+README.md:* voxl-opencv
+README.md:* voxl-tflite
+README.md:    * apq8096-tflite OR qrb5165-tflite
+README.md:This project builds in the voxl-cross docker image (>= V1.7)
+README.md:Follow the instructions here to build and install the voxl-cross docker image:
+README.md:https://gitlab.com/voxl-public/voxl-docker
+README.md:1) Launch the voxl-cross docker.
+README.md:~/git/voxl-tflite-server# voxl-docker -i voxl-cross
+README.md:bash-4.3$ ls
+README.md:2) Install dependencies inside the docker. You must specify both the hardware platform and binary repo section to pull from. CI will use the `dev` binary repo for `dev` branch jobs, otherwise it will select the correct target SDK-release based on tags. When building yourself, you must decide what your intended target is, usually `dev` or `staging`
+README.md:voxl-cross:~$ ./install_build_deps.sh qrb5165 dev
+README.md:3) Build scripts should take the hardware platform as an argument: `qrb5165` or `apq8096`. CI will pass these arguments to the build script based on the job target. It's recommended your build script also allow a `native` option that uses the native GCC instead of a cross-compiler. This is handy for local building and testing of hard-ware independent code.
+README.md:The build script in this template will build for 64-bit using different cross compilers for each hardware platform. See libmodal-pipe for an exmaple of building for both 64 and 32 bit.
+README.md:voxl-cross:~$ ./build.sh qrb5165
+README.md:voxl-cross:~$ ./build.sh apq8096
+README.md:voxl-cross:~$ ./make_package.sh deb
+README.md:voxl-cross:~$ ./make_package.sh ipk
+README.md:Optionally add the --timestamp argument to append the current data and time to the package version number in the debian package. This is done automatically by the CI package builder for development and nightly builds, however you can use it yourself if you like.
+README.md:voxl-tflite-server$ ./deploy_to_voxl.sh
+README.md:voxl-tflite-server$ ./deploy_to_voxl.sh ssh 192.168.1.123
+deploy_to_voxl.sh:set -e
+deploy_to_voxl.sh:if [ "$#" -lt 1 ]; then
+deploy_to_voxl.sh:			if [ "$#" -gt 1 ]; then
+deploy_to_voxl.sh:				if  echo $2 | grep -xq "[0-9]*" ; then
+deploy_to_voxl.sh:				elif  echo $2 | grep -xq "[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*" ; then
+deploy_to_voxl.sh:			elif ! [ -z ${VOXL_IP+x} ]; then
+deploy_to_voxl.sh:				read -p "Please enter an IP to push to:" SEND_IP
+deploy_to_voxl.sh:		"h"|"-h"|"help"|"--help")
+deploy_to_voxl.sh:NUM_IPK=$(ls -1q *.ipk 2>/dev/null | wc -l)
+deploy_to_voxl.sh:NUM_DEB=$(ls -1q *.deb 2>/dev/null | wc -l)
+deploy_to_voxl.sh:if [[ $NUM_IPK -eq "0" && $NUM_DEB -eq "0" ]]; then
+deploy_to_voxl.sh:elif [[ $NUM_IPK -gt "1" || $NUM_DEB -gt "1" ]]; then
+deploy_to_voxl.sh:DPKG_CHECK_STRING='command -v dpkg &> /dev/null; echo -n $?'
+deploy_to_voxl.sh:OPKG_CHECK_STRING='command -v opkg &> /dev/null; echo -n $?'
+deploy_to_voxl.sh:	if ! command -v sshpass &> /dev/null ;then
+deploy_to_voxl.sh:	until ping -c1 $SEND_IP &>/dev/null; do :; done
+deploy_to_voxl.sh:	if sshpass -p oelinux123 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@$SEND_IP "$DPKG_CHECK_STRING" 2>/dev/null | grep -q 0 ; then
+deploy_to_voxl.sh:		FILE=$(ls -1q $PACKAGE*.deb)
+deploy_to_voxl.sh:		sshpass -p oelinux123 scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $FILE root@$SEND_IP:/data/$FILE &>/dev/null
+deploy_to_voxl.sh:		sshpass -p oelinux123 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@$SEND_IP "dpkg -i --force-downgrade --force-depends /data/$FILE" 2>/dev/null
+deploy_to_voxl.sh:	elif sshpass -p oelinux123 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@$SEND_IP "$OPKG_CHECK_STRING" 2>/dev/null | grep -q 0 ; then
+deploy_to_voxl.sh:		FILE=$(ls -1q $PACKAGE*.ipk)
+deploy_to_voxl.sh:		sshpass -p oelinux123 scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null $FILE root@$SEND_IP:/data/$FILE &>/dev/null
+deploy_to_voxl.sh:		sshpass -p oelinux123 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@$SEND_IP "opkg install --force-reinstall --force-downgrade --force-depends --force-overwrite /data/$FILE" 2>/dev/null
+deploy_to_voxl.sh:	if ! command -v adb &> /dev/null ;then
+deploy_to_voxl.sh:	adb wait-for-device
+deploy_to_voxl.sh:	if adb shell "$DPKG_CHECK_STRING" | grep -q 0 ; then
+deploy_to_voxl.sh:		adb shell "dpkg -i --force-downgrade --force-depends /data/$FILE"
+deploy_to_voxl.sh:	elif adb shell "$OPKG_CHECK_STRING" | grep -q 0 ; then
+deploy_to_voxl.sh:		adb shell "opkg install --force-reinstall --force-downgrade --force-depends --force-overwrite /data/$FILE"
+CHANGELOG:    * voxl-configure-tflite for qrb5165 cleaned up, added posenet and stereo options
+CHANGELOG:    * ai detection t type updated (compatible with latest mpa-to-ros)
+CHANGELOG:    * headers and deps updated, now dependent on voxl-tflite >= 2.2.3-1
+CHANGELOG:    * updated CMake flags + libs for new voxl-tflite (v2.2.3)
+CHANGELOG:    * Rename Repo to voxl-tflite-server
+make_package.sh:	if [ "$#" -ne 1 ]; then
+make_package.sh:		"-t"|"timestamp"|"--timestamp")
+make_package.sh:		"-d"|"deb"|"debian"|"--deb"|"--debian")
+make_package.sh:		"-i"|"ipk"|"opkg"|"--ipk"|"--opkg")
+make_package.sh:VERSION=$(cat pkg/control/control | grep "Version" | cut -d' ' -f 2)
+make_package.sh:PACKAGE=$(cat pkg/control/control | grep "Package" | cut -d' ' -f 2)
+make_package.sh:sudo rm -rf $DATA_DIR
+make_package.sh:rm -rf $IPK_DIR
+make_package.sh:rm -rf $DEB_DIR
+make_package.sh:rm -f *.ipk
+make_package.sh:rm -f *.deb
+make_package.sh:## try this for all 3 possible build folders, some packages are multi-arch
+make_package.sh:if [[ -d "build" ]]; then
+make_package.sh:	cd build && sudo make DESTDIR=../${DATA_DIR} PREFIX=/usr install && cd -
+make_package.sh:if [[ -d "build32" ]]; then
+make_package.sh:	cd build32 && sudo make DESTDIR=../${DATA_DIR} PREFIX=/usr install && cd -
+make_package.sh:if [[ -d "build64" ]]; then
+make_package.sh:	cd build64 && sudo make DESTDIR=../${DATA_DIR} PREFIX=/usr install && cd -
+make_package.sh:if [ "$DID_BUILD" = false ] && [ -f "build.sh" ]; then
+make_package.sh:if [ -d "services" ]; then
+make_package.sh:	sudo mkdir -p $DATA_DIR/etc/systemd/system/
+make_package.sh:if [ -d "scripts" ]; then
+make_package.sh:	sudo mkdir -p $DATA_DIR/usr/bin/
+make_package.sh:if [ -d "bash_completions" ]; then
+make_package.sh:	sudo mkdir -p $DATA_DIR/usr/share/bash-completion/completions
+make_package.sh:	sudo cp bash_completions/* $DATA_DIR/usr/share/bash-completion/completions
+make_package.sh:if [ -d "misc_files" ]; then
+make_package.sh:		sudo cp -R misc_files/* $DATA_DIR/	
+make_package.sh:if [ -d "bash_profile" ]; then
+make_package.sh:	sudo mkdir -p ${DATA_DIR}/home/root/.profile.d/
+make_package.sh:	sudo cp -R bash_profile/* ${DATA_DIR}/home/root/.profile.d/
+make_package.sh:	echo "2.0" > $IPK_DIR/debian-binary
+make_package.sh:	tar --create --gzip -f ../../$IPK_DIR/control.tar.gz *
+make_package.sh:	tar --create --gzip -f ../../$IPK_DIR/data.tar.gz *
+make_package.sh:	ar -r $IPK_NAME $IPK_DIR/control.tar.gz $IPK_DIR/data.tar.gz $IPK_DIR/debian-binary
+make_package.sh:	## make a folder dedicated to IPK building and copy the requires debian-binary file in
+make_package.sh:	cp -rf $CONTROL_DIR/ $DEB_DIR/DEBIAN
+make_package.sh:	cp -rf $DATA_DIR/*   $DEB_DIR
+make_package.sh:		sed -E -i "s/Version.*/&-$dts/" $DEB_DIR/DEBIAN/control
+make_package.sh:		VERSION="${VERSION}-${dts}"
+make_package.sh:	dpkg-deb --build ${DEB_DIR} ${DEB_NAME}
+clean.sh:sudo rm -rf build/
+clean.sh:sudo rm -rf build32/
+clean.sh:sudo rm -rf build64/
+clean.sh:sudo rm -rf pkg/control.tar.gz
+clean.sh:sudo rm -rf pkg/data/
+clean.sh:sudo rm -rf pkg/data.tar.gz
+clean.sh:sudo rm -rf pkg/DEB/
+clean.sh:sudo rm -rf pkg/IPK/
+clean.sh:sudo rm -rf *.ipk
+clean.sh:sudo rm -rf *.deb
+clean.sh:sudo rm -rf .bash_history
+LICENSE:For a license to use on non-ModalAI hardware, please contact license@modalai.com
+services/voxl-tflite-server.service:Description=voxl-tflite-server
+services/voxl-tflite-server.service:SourcePath=/usr/bin/voxl-tflite-server
+services/voxl-tflite-server.service:PIDFile=/run/voxl-tflite-server.pid
+services/voxl-tflite-server.service:Restart=on-failure
+services/voxl-tflite-server.service:ExecStart=/bin/bash -c "/usr/bin/voxl-tflite-server"
+services/voxl-tflite-server.service:WantedBy=multi-user.target
+bash_completions/voxl-configure-tflite:_voxl-configure-tflite(){
+bash_completions/voxl-configure-tflite:	if [ "$COMP_CWORD" -eq 1 ]; then
+bash_completions/voxl-configure-tflite:		COMPREPLY=( $(compgen -W '${OPTS}' -- ${COMP_WORDS[COMP_CWORD]}) )
+bash_completions/voxl-configure-tflite:complete -F _voxl-configure-tflite voxl-configure-tflite
+src/utils.cpp:    result->clear();
+src/utils.cpp:        result->push_back(line);
+src/utils.cpp:        *found_label_count = result->size();
+src/utils.cpp:    while (result->size() % padding)
+src/utils.cpp:        result->emplace_back();
+src/utils.cpp:        if (c == -1)
+src/utils.cpp:        "-c, --config    : load the config file only, for use by the config "
+src/utils.cpp:    printf("-d, --debug     : enable verbose debug output (Default: Off)\n");
+src/utils.cpp:        "-t, --timing    : enable timing output for model operations (Default: "
+src/utils.cpp:    printf("-h              : Print this help message\n");
+src/image_utils.cpp:                      pos + cv::Point(textSize.width, -textSize.height),
+src/image_utils.cpp:                      color_back, -1);
+src/image_utils.cpp:    double fps = 1e9 / (time_now - time_previous).count();
+src/main.cpp:#define PROCESS_NAME "voxl-tflite-server"
+src/main.cpp:        return -1;
+src/main.cpp:        return -1;
+src/main.cpp:        // if return value is -3 then a background process is running with
+src/main.cpp:        // not continue or there may be hardware conflicts. If it returned -4
+src/main.cpp:        if (kill_existing_process(PROCESS_NAME, 2.0) < -2)
+src/main.cpp:            return -1;
+src/main.cpp:        if (enable_signal_handler() == -1)
+src/main.cpp:            return (-1);
+src/main.cpp:        full_path.substr(full_path.rfind("/", full_path.size() - 2) + 1));
+src/main.cpp:    model_helper->cam_name = cam_name;
+src/main.cpp:    fprintf(stderr, "\n------VOXL TFLite Server------\n\n");
+src/main.cpp:    args->model_helper = model_helper;
+src/main.cpp:    int ret = pthread_create(&(model_helper->thread), &thread_attributes, inference_worker, args);
+src/main.cpp:        return -1;
+src/main.cpp:    model_helper->cond_var.notify_all();
+src/main.cpp:    pthread_join(model_helper->thread, NULL);
+src/main.cpp:    int queue_ind = model_helper->camera_queue.insert_idx;
+src/main.cpp:    TFLiteMessage *camera_message = &model_helper->camera_queue.queue[queue_ind];
+src/main.cpp:    camera_message->metadata = meta;
+src/main.cpp:    memcpy(camera_message->image_pixels, (uint8_t *)frame, meta.size_bytes);
+src/main.cpp:    model_helper->camera_queue.insert_idx = ((queue_ind + 1) % QUEUE_SIZE);
+src/main.cpp:    model_helper->cond_var.notify_all();
+src/main.cpp:        model_helper->print_summary_stats();
+src/main.cpp:                     "lite-model_efficientnet_lite4_uint8_2.tflite"))
+src/main.cpp:                     "lite-model_movenet_singlepose_lightning_tflite_float16_"
+src/main.cpp:                "WARNING: Unknown model type provided! Defaulting post-process "
+src/config_file.cpp:        return -1;
+src/config_file.cpp:        return -1;
+src/config_file.cpp:        return -1;
+install_build_deps.sh:# Script to install build dependencies in voxl-cross docker image
+install_build_deps.sh:# sure the correct one is installed in voxl-cross.
+install_build_deps.sh:libmodal-pipe
+install_build_deps.sh:libmodal-json
+install_build_deps.sh:voxl-opencv
+install_build_deps.sh:qrb5165-tflite"
+install_build_deps.sh:libmodal-pipe
+install_build_deps.sh:libmodal-json
+install_build_deps.sh:voxl-opencv
+install_build_deps.sh:apq8096-tflite"
+install_build_deps.sh:## this list is just for tab-completion
+install_build_deps.sh:	echo "  ./install_build_deps.sh qrb5165 sdk-1.0"
+install_build_deps.sh:	echo "        Install from qrb5165 sdk-1.0 repo."
+install_build_deps.sh:	echo "     http://voxl-packages.modalai.com/dists/"
+install_build_deps.sh:if [ "$#" -ne 2 ]; then
+install_build_deps.sh:	LINE="deb [trusted=yes] http://voxl-packages.modalai.com/ ./dists/$PLATFORM/$SECTION/binary-arm64/"
+install_build_deps.sh:	## only pull from voxl-packages to save time
+install_build_deps.sh:	sudo apt-get update -o Dir::Etc::sourcelist="sources.list.d/modalai.list" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"
+install_build_deps.sh:	sudo apt install -y $DEPS_QRB5165
+install_build_deps.sh:	sudo sed -i '/voxl-packages.modalai.com/d' ${OPKG_CONF}
+install_build_deps.sh:	if ! grep -q "arch arm64" "${OPKG_CONF}"; then
+install_build_deps.sh:	LINE="src/gz ${SECTION} http://voxl-packages.modalai.com/dists/$PLATFORM/${SECTION}/binary-arm64/"
+install_build_deps.sh:		sudo opkg install --nodeps $i
+CMakeLists.txt:project(voxl-tflite-server)
+CMakeLists.txt:set(CMAKE_C_FLAGS "-std=gnu99 -Wno-unused-parameter -Wall -Wextra -Wuninitialized \
+CMakeLists.txt:	-Wunused-variable -Wdouble-promotion -Wmissing-prototypes \
+CMakeLists.txt:	-Wmissing-declarations -Werror=undef -Wno-unused-function ${CMAKE_C_FLAGS}")
+CMakeLists.txt:set(CMAKE_CXX_FLAGS "-std=gnu++11 -std=c++11 -Wno-unused-parameter -Wall -Wextra -Wuninitialized -Wno-attributes \
+CMakeLists.txt:    -Wunused-variable -Wno-double-promotion -Wno-missing-field-initializers \
+CMakeLists.txt:    -Werror=undef -Wno-unused-function ${CMAKE_CXX_FLAGS}")
+CMakeLists.txt:# for VOXL, install 64-bit libraries to lib64
+src/inference_handler.cpp:    ModelHelper *model_helper = worker_args->model_helper;
+src/inference_handler.cpp:    int nice = -15;
+src/inference_handler.cpp:        if (queue_index == model_helper->camera_queue.insert_idx)
+src/inference_handler.cpp:            std::unique_lock<std::mutex> lock(model_helper->cond_mutex);
+src/inference_handler.cpp:            model_helper->cond_var.wait(lock);
+src/inference_handler.cpp:        TFLiteMessage *new_frame = &model_helper->camera_queue.queue[queue_index];
+src/inference_handler.cpp:        if (!model_helper->preprocess_image(new_frame->metadata, (char *)new_frame->image_pixels, preprocessed_image, output_image))
+src/inference_handler.cpp:        model_helper->preprocessed_image = &preprocessed_image;
+src/inference_handler.cpp:        int new_format = new_frame->metadata.format;
+src/inference_handler.cpp:        if (!model_helper->run_inference(preprocessed_image, &last_inference_time))
+src/inference_handler.cpp:        new_frame->metadata.format = new_format;
+src/inference_handler.cpp:        model_helper->worker(output_image, last_inference_time, new_frame);
+include/config_file.h:#define CONFIG_FILE "/etc/modalai/voxl-tflite-server.conf"
+include/config_file.h: * This file contains configuration that's specific to voxl-tflite-server.\n\
+include/config_file.h: * skip_n_frames       - how many frames to skip between processed frames. For 30Hz\n\
+include/config_file.h: * model               - which model to use. Currently support mobilenet, fastdepth,\n\
+include/config_file.h: * input_pipe          - which camera to use (tracking, hires, or stereo).\n\
+include/config_file.h: * delegate            - optional hardware acceleration: gpu, cpu, or nnapi. If\n\
+include/config_file.h: * allow_multiple      - remove process handling and allow multiple instances\n\
+include/config_file.h: *                         of voxl-tflite-server to run. Enables the ability\n\
+include/config_file.h: * output_pipe_prefix  - if allow_multiple is set, create output pipes using default\n\
+include/config_file.h: * This file contains configuration that's specific to voxl-tflite-server.\n\
+include/config_file.h: * skip_n_frames      - how many frames to skip between processed frames. For 30Hz\n\
+include/config_file.h: * model               - which model to use. Currently support mobilenet, fastdepth,\n\
+include/config_file.h: * input_pipe         - which camera to use (tracking, hires, or stereo).\n\
+include/config_file.h: * delegate           - optional hardware acceleration: gpu or cpu. If\n\
+src/resize.c:    int  height = map->h_out;
+src/resize.c:    int   width = map->w_out;
+src/resize.c:    bilinear_lookup_t* L = map->L;
+src/resize.c:        uint16_t p0 = input[map->w_in*y1 + x1];
+src/resize.c:        uint16_t p1 = input[map->w_in*y1 + x1 + 1];
+src/resize.c:        uint16_t p2 = input[map->w_in*(y1+1) + x1];
+src/resize.c:        uint16_t p3 = input[map->w_in*(y1+1) + x1 + 1];
+src/resize.c:// expects rgb_input as contiguous memory chunk 8bits-R|8bits-G|8bits-B ...
+src/resize.c:    int  height = map->h_out;
+src/resize.c:    int   width = map->w_out;
+src/resize.c:    bilinear_lookup_t* L = map->L;
+src/resize.c:        // get indices from index lookup I - same for all 3 components of pixel
+src/resize.c:         * rgb input is arranged as: 8bits-R|8bits-G|8bits-B
+src/resize.c:        uint16_t p0 = rgb_input[(map->w_in*y1 + x1) * 3];
+src/resize.c:        uint16_t p4 = rgb_input[(map->w_in*y1 + x1) * 3 + 1];
+src/resize.c:        uint16_t p8 = rgb_input[(map->w_in*y1 + x1) * 3 + 2];
+src/resize.c:        uint16_t p1 = rgb_input[(map->w_in*y1 + x1 + 1) * 3 ];
+src/resize.c:        uint16_t p5 = rgb_input[(map->w_in*y1 + x1 + 1) * 3 + 1];
+src/resize.c:        uint16_t p9 = rgb_input[(map->w_in*y1 + x1 + 1) * 3 + 2];
+src/resize.c:        uint16_t p2 = rgb_input[(map->w_in*(y1+1) + x1) * 3];
+src/resize.c:        uint16_t p6 = rgb_input[(map->w_in*(y1+1) + x1) * 3 + 1];
+src/resize.c:        uint16_t p7 = rgb_input[(map->w_in*(y1+1) + x1) * 3 + 2];
+src/resize.c:        uint16_t p3 = rgb_input[(map->w_in*(y1+1) + x1 + 1) * 3];
+src/resize.c:        uint16_t p10 = rgb_input[(map->w_in*(y1+1) + x1 + 1) * 3 + 1];
+src/resize.c:        uint16_t p11 = rgb_input[(map->w_in*(y1+1) + x1 + 1) * 3 + 2];
+src/resize.c:    map->h_out = h_out;
+src/resize.c:    map->w_out = w_out;
+src/resize.c:    map->h_in = h_in;
+src/resize.c:    map->w_in = w_in;
+src/resize.c:    map->L = (bilinear_lookup_t*)malloc(w_out*h_out*sizeof(bilinear_lookup_t));
+src/resize.c:    if(map->L==NULL){
+src/resize.c:        return -1;
+src/resize.c:    bilinear_lookup_t* L = map->L;
+src/resize.c:    float x_r = ((float)(w_in - 1)/(float)(w_out));
+src/resize.c:    float y_r = ((float)(h_in - 1)/(float)(h_out));
+src/resize.c:            float x_w = (x_r * u) - x_l;
+src/resize.c:            float y_w = (y_r * v) - y_l;
+src/resize.c:            if((x_l < 0 || x2 > (w_in-1)) || (y_l < 0 || y2 > (h_in-1))){
+src/resize.c:                L[pix].I[0] = -1;
+src/resize.c:                L[pix].I[1] = -1;
+src/resize.c:            L[pix].F[0] = (1-x_w)*(1-y_w)*256;
+src/resize.c:            L[pix].F[1] = (x_w)*(1-y_w)*256;
+src/resize.c:            L[pix].F[2] = (y_w)*(1-x_w)*256;
+include/tensor_data.h:    for (int i = 1; i < tensor->dims->size; i++)
+include/tensor_data.h:        nelems *= tensor->dims->data[i];
+include/tensor_data.h:    switch (tensor->type)
+include/tensor_data.h:        return tensor->data.f + nelems * batch_index;
+include/tensor_data.h:    for (int i = 1; i < tensor->dims->size; i++)
+include/tensor_data.h:        nelems *= tensor->dims->data[i];
+include/tensor_data.h:    switch (tensor->type)
+include/tensor_data.h:        return tensor->data.i32 + nelems * batch_index;
+include/tensor_data.h:    for (int i = 1; i < tensor->dims->size; i++)
+include/tensor_data.h:        nelems *= tensor->dims->data[i];
+include/tensor_data.h:    switch (tensor->type)
+include/tensor_data.h:        return tensor->data.i64 + nelems * batch_index;
+include/tensor_data.h:    for (int i = 1; i < tensor->dims->size; i++)
+include/tensor_data.h:        nelems *= tensor->dims->data[i];
+include/tensor_data.h:    switch (tensor->type)
+include/tensor_data.h:        return tensor->data.int8 + nelems * batch_index;
+include/tensor_data.h:    for (int i = 1; i < tensor->dims->size; i++)
+include/tensor_data.h:        nelems *= tensor->dims->data[i];
+include/tensor_data.h:    switch (tensor->type)
+include/tensor_data.h:        return tensor->data.uint8 + nelems * batch_index;
+src/CMakeLists.txt:SET(TARGET voxl-tflite-server)
+src/CMakeLists.txt:    add_definitions(-DBUILD_QRB5165)
+src/CMakeLists.txt:    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -Wall -Wuninitialized -Wmaybe-uninitialized -fno-omit-frame-pointer")
+src/CMakeLists.txt:    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fsee -fomit-frame-pointer -fno-signed-zeros -fno-math-errno -funroll-loops")
+src/CMakeLists.txt:add_compile_options(-fsanitize=address)
+src/CMakeLists.txt:add_link_options(-fsanitize=address)
+src/CMakeLists.txt:    /usr/include/abseil-cpp/
+src/CMakeLists.txt:set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-implicit-fallthrough")
+src/CMakeLists.txt:    "tensorflow-lite"
+src/CMakeLists.txt:    "glib-2.0"
+src/CMakeLists.txt:    "gthread-2.0"
+src/CMakeLists.txt:    "llvm-qcom"
+src/CMakeLists.txt:    -Wl,-rpath-link,/usr/lib64/
+src/CMakeLists.txt:    -L/usr/lib64/
+src/model_helper/model_helper.cpp:        exit(-1);
+src/model_helper/model_helper.cpp:    model->error_reporter();
+src/model_helper/model_helper.cpp:        exit(-1);
+src/model_helper/model_helper.cpp:    // Set multi-threading
+src/model_helper/model_helper.cpp:    interpreter->SetNumThreads(8);
+src/model_helper/model_helper.cpp:    interpreter->SetNumThreads(4);
+src/model_helper/model_helper.cpp:    interpreter->SetAllowFp16PrecisionForFp32(true);
+src/model_helper/model_helper.cpp:    if (interpreter->AllocateTensors() != kTfLiteOk)
+src/model_helper/model_helper.cpp:        exit(-1);
+src/model_helper/model_helper.cpp:    // Get model-specific parameters
+src/model_helper/model_helper.cpp:    TfLiteIntArray *dims = interpreter->tensor(interpreter->inputs()[0])->dims;
+src/model_helper/model_helper.cpp:    model_height = dims->data[1];
+src/model_helper/model_helper.cpp:    model_width = dims->data[2];
+src/model_helper/model_helper.cpp:    model_channels = dims->data[3];
+src/model_helper/model_helper.cpp:            ((rc_nanos_monotonic_time() - start_time) / 1000000.);
+src/model_helper/model_helper.cpp:        if (interpreter->ModifyGraphWithDelegate(xnnpack_delegate) != kTfLiteOk)
+src/model_helper/model_helper.cpp:        if (interpreter->ModifyGraphWithDelegate(gpu_delegate) != kTfLiteOk)
+src/model_helper/model_helper.cpp:        nnapi_opts.max_number_delegated_partitions = -1;
+src/model_helper/model_helper.cpp:        nnapi_opts.accelerator_name = "libunifiedhal-driver.so2";
+src/model_helper/model_helper.cpp:        if (interpreter->ModifyGraphWithDelegate(nnapi_delegate) != kTfLiteOk)
+src/model_helper/model_helper.cpp:    int input = interpreter->inputs()[0];
+src/model_helper/model_helper.cpp:    switch (interpreter->tensor(input)->type)
+src/model_helper/model_helper.cpp:        float *dst = TensorData<float>(interpreter->tensor(input), 0);
+src/model_helper/model_helper.cpp:                        (row_ptr[i] - PIXEL_MEAN_GUESS) / PIXEL_MEAN_GUESS;
+src/model_helper/model_helper.cpp:        int8_t *dst = TensorData<int8_t>(interpreter->tensor(input), 0);
+src/model_helper/model_helper.cpp:        uint8_t *dst = TensorData<uint8_t>(interpreter->tensor(input), 0);
+src/model_helper/model_helper.cpp:    if (interpreter->Invoke() != kTfLiteOk)
+src/model_helper/model_helper.cpp:        total_inference_time += ((end_time - start_time) / 1000000.);
+src/model_helper/model_helper.cpp:        *last_inference_time = ((double)(end_time - start_time) / 1000000.);
+src/model_helper/model_helper.cpp:    fprintf(stderr, "\n------------------------------------------\n");
+src/model_helper/model_helper.cpp:    fprintf(stderr, "------------------------------------------\n");
+src/model_helper/model_helper.cpp:            "Preprocessing Time  -> Total: %6.2fms, Average: %6.2fms\n",
+src/model_helper/model_helper.cpp:            "Inference Time      -> Total: %6.2fms, Average: %6.2fms\n",
+src/model_helper/model_helper.cpp:            "Postprocessing Time -> Total: %6.2fms, Average: %6.2fms\n",
+src/model_helper/model_helper.cpp:    fprintf(stderr, "------------------------------------------\n");
+src/model_helper/yolov5_model_helper.cpp:            exit(-1);
+src/model_helper/yolov5_model_helper.cpp:    new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
+src/model_helper/yolov5_model_helper.cpp:    pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata, (char *)output_image.data);
+src/model_helper/yolov5_model_helper.cpp:        interpreter->tensor(interpreter->outputs()[0]);
+src/model_helper/yolov5_model_helper.cpp:            ((rc_nanos_monotonic_time() - start_time) / 1000000.);
+src/model_helper/yolov5_model_helper.cpp:                        int32_t x = cx - w / 2;
+src/model_helper/yolov5_model_helper.cpp:                        int32_t y = cy - h / 2;
+src/model_helper/yolov5_model_helper.cpp:    int32_t areaInter = (interx1 - interx0) * (intery1 - intery0);
+src/model_helper/yolov5_model_helper.cpp:    int32_t areaSum = area0 + area1 - areaInter;
+src/model_helper/posenet_model_helper.cpp:        interpreter->tensor(interpreter->outputs()[0]);
+src/model_helper/posenet_model_helper.cpp:    new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
+src/model_helper/posenet_model_helper.cpp:    pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata,
+src/model_helper/generic_object_detection_model_helper.cpp:            exit(-1);
+src/model_helper/generic_object_detection_model_helper.cpp:    new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
+src/model_helper/generic_object_detection_model_helper.cpp:    pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata, (char *)output_image.data);
+src/model_helper/generic_object_detection_model_helper.cpp:        interpreter->tensor(interpreter->outputs()[0]);
+src/model_helper/generic_object_detection_model_helper.cpp:        interpreter->tensor(interpreter->outputs()[1]);
+src/model_helper/generic_object_detection_model_helper.cpp:        interpreter->tensor(interpreter->outputs()[2]);
+src/model_helper/generic_object_detection_model_helper.cpp:        interpreter->tensor(interpreter->outputs()[3]);
+src/model_helper/generic_object_detection_model_helper.cpp:            int height = bottom - top;
+src/model_helper/generic_object_detection_model_helper.cpp:            int width = right - left;
+src/model_helper/generic_object_detection_model_helper.cpp:            cv::Point pt(left, top - 10);
+src/model_helper/generic_object_detection_model_helper.cpp:                -1; // UNKNOWN for ssd model architecture
+src/model_helper/generic_object_detection_model_helper.cpp:            ((rc_nanos_monotonic_time() - start_time) / 1000000.);
+src/model_helper/deep_lab_model_helper.cpp:// pre-defined color map for each class, corresponds to cityscapes_labels.txt
+src/model_helper/deep_lab_model_helper.cpp:            exit(-1);
+src/model_helper/deep_lab_model_helper.cpp:    new_frame_metadata = new_frame->metadata;
+src/model_helper/deep_lab_model_helper.cpp:    new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
+src/model_helper/deep_lab_model_helper.cpp:    pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata,
+src/model_helper/deep_lab_model_helper.cpp:                                   (char *)preprocessed_image->data);
+src/model_helper/deep_lab_model_helper.cpp:    // camera_image_metadata_t &meta = params->meta;
+src/model_helper/deep_lab_model_helper.cpp:        interpreter->tensor(interpreter->outputs()[0]);
+src/model_helper/deep_lab_model_helper.cpp:            ((rc_nanos_monotonic_time() - start_time) / 1000000.);
+src/model_helper/fast_depth_model_helper.cpp:    camera_image_metadata_t &meta = params->meta;
+src/model_helper/fast_depth_model_helper.cpp:        interpreter->tensor(interpreter->outputs()[0]);
+src/model_helper/fast_depth_model_helper.cpp:    depthmap_visual = 255 * (depthImage - min_val) /
+src/model_helper/fast_depth_model_helper.cpp:                      (max_val - min_val); // * 255 for "scaled" disparity
+src/model_helper/fast_depth_model_helper.cpp:            ((rc_nanos_monotonic_time() - start_time) / 1000000.);
+src/model_helper/fast_depth_model_helper.cpp:    new_frame_metadata = new_frame->metadata;
+src/model_helper/fast_depth_model_helper.cpp:    new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
+src/model_helper/fast_depth_model_helper.cpp:    pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata,
+pkg/control/control:Package: voxl-tflite-server
+pkg/control/control:Depends: libmodal-pipe,libmodal-json, voxl-opencv, qrb5165-tflite(>=2.8.0) | apq8096-tflite(>=2.8.0)
+pkg/control/control:Description: client of voxl-camera-server that does deep learning
+pkg/control/control:Conflicts: voxl-mpa-tflite-server
+pkg/control/control:Replaces: voxl-mpa-tflite-server
+pkg/control/postinst:set -e
+pkg/control/postinst:if [ -f "/sbin/ldconfig" ]; then
+pkg/control/postinst:systemctl daemon-reload
+include/model_helper/model_helper.h:    int insert_idx = 0;              // next element insert location (between 0 - QUEUE_SIZE)
+scripts/apq8096/voxl-configure-tflite:NAME="voxl-tflite-server"
+scripts/apq8096/voxl-configure-tflite:	echo "voxl-configure-tflite-server"
+scripts/apq8096/voxl-configure-tflite:	echo "voxl-configure-tflite-server factory_disable"
+scripts/apq8096/voxl-configure-tflite:	echo "voxl-configure-tflite-server disable"
+scripts/apq8096/voxl-configure-tflite:	echo "voxl-configure-tflite-server factory_enable"
+scripts/apq8096/voxl-configure-tflite:	echo "voxl-configure-tflite-server enable"
+scripts/apq8096/voxl-configure-tflite:	echo "voxl-configure-tflite-server help"
+scripts/apq8096/voxl-configure-tflite:	sed -E -i "/\"$var\":/c\	\"$var\":	$val," ${CONFIG_FILE}
+scripts/apq8096/voxl-configure-tflite:	sed -E -i "/\"$var\":/c\	\"$var\":	\"$2\"," ${CONFIG_FILE}
+scripts/apq8096/voxl-configure-tflite:	sed -E -i "/\"$var\":/c\	\"$var\":	\"$2\"" ${CONFIG_FILE}
+scripts/apq8096/voxl-configure-tflite:	rm -rf ${CONFIG_FILE}
+scripts/apq8096/voxl-configure-tflite:	${NAME} -c
+scripts/apq8096/voxl-configure-tflite:	"h"|"-h"|"help"|"--help")
+scripts/apq8096/voxl-configure-tflite:	echo "loading and updating config file with ${NAME} -c"
+scripts/apq8096/voxl-configure-tflite:	${NAME} -c
+scripts/apq8096/voxl-configure-tflite:echo -e "Select a model to use with the tflite-server:\n (1) Mobilenet - object detection\n (2) FastDepth - monocular depth estimation\n (3) Deeplab - cityscapes segmentation\n (4) EfficientNet - image classification\n (5) Posenet - pose estimation\n (6) Yolov5 - object detection\n"
+scripts/apq8096/voxl-configure-tflite:	set_param_string model "/usr/bin/dnn/lite-model_efficientnet_lite4_uint8_2.tflite"
+scripts/apq8096/voxl-configure-tflite:	set_param_string model "/usr/bin/dnn/lite-model_movenet_singlepose_lightning_tflite_float16_4.tflite"
+scripts/apq8096/voxl-configure-tflite:echo -e "Select an image sensor to use with the tflite-server:\n (1) Hires\n (2) Tracking\n (3) Stereo (left cam only)\n"
+src/model_helper/yolov8_model_helper.cpp:            exit(-1);
+src/model_helper/yolov8_model_helper.cpp:    new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
+src/model_helper/yolov8_model_helper.cpp:    pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata, (char *)output_image.data);
+src/model_helper/yolov8_model_helper.cpp:    TfLiteTensor *output_tensor = interpreter->tensor(interpreter->outputs()[0]);
+src/model_helper/yolov8_model_helper.cpp:    const auto &output_shape = output_tensor->dims;
+src/model_helper/yolov8_model_helper.cpp:    rows = output_shape->data[2];
+src/model_helper/yolov8_model_helper.cpp:    dimensions = output_shape->data[1];
+src/model_helper/yolov8_model_helper.cpp:    int output_index = interpreter->outputs()[0];
+src/model_helper/yolov8_model_helper.cpp:    float *data = interpreter->typed_tensor<float>(output_index);
+src/model_helper/yolov8_model_helper.cpp:            int left = int((xc - 0.5 * w) * input_width);
+src/model_helper/yolov8_model_helper.cpp:            int top = int((yc - 0.5 * h) * input_height);
+src/model_helper/yolov8_model_helper.cpp:        curr_detection.detection_confidence = -1.0; // detection confidence is not a thing for yolov8
+src/model_helper/yolov8_model_helper.cpp:    int input = interpreter->inputs()[0];
+src/model_helper/yolov8_model_helper.cpp:    float *input_data = interpreter->typed_tensor<float>(input);
+src/model_helper/yolov8_model_helper.cpp:    if (interpreter->Invoke() != kTfLiteOk)
+src/model_helper/yolov8_model_helper.cpp:        total_inference_time += ((end_time - start_time) / 1000000.);
+src/model_helper/yolov8_model_helper.cpp:        *last_inference_time = ((double)(end_time - start_time) / 1000000.);
+src/model_helper/yolov8_model_helper.cpp:            ((rc_nanos_monotonic_time() - start_time) / 1000000.);
+scripts/qrb5165/voxl-configure-tflite:NAME="voxl-tflite-server"
+scripts/qrb5165/voxl-configure-tflite:	echo "voxl-configure-tflite-server"
+scripts/qrb5165/voxl-configure-tflite:	echo "voxl-configure-tflite-server factory_disable"
+scripts/qrb5165/voxl-configure-tflite:	echo "voxl-configure-tflite-server disable"
+scripts/qrb5165/voxl-configure-tflite:	echo "voxl-configure-tflite-server factory_enable"
+scripts/qrb5165/voxl-configure-tflite:	echo "voxl-configure-tflite-server enable"
+scripts/qrb5165/voxl-configure-tflite:	echo "voxl-configure-tflite-server help"
+scripts/qrb5165/voxl-configure-tflite:	sed -E -i "/\"$var\":/c\	\"$var\":	$val," ${CONFIG_FILE}
+scripts/qrb5165/voxl-configure-tflite:	sed -E -i "/\"$var\":/c\	\"$var\":	\"$2\"," ${CONFIG_FILE}
+scripts/qrb5165/voxl-configure-tflite:	sed -E -i "/\"$var\":/c\	\"$var\":	\"$2\"" ${CONFIG_FILE}
+scripts/qrb5165/voxl-configure-tflite:	rm -rf ${CONFIG_FILE}
+scripts/qrb5165/voxl-configure-tflite:	${NAME} -c
+scripts/qrb5165/voxl-configure-tflite:	"h"|"-h"|"help"|"--help")
+scripts/qrb5165/voxl-configure-tflite:	echo "loading and updating config file with ${NAME} -c"
+scripts/qrb5165/voxl-configure-tflite:	${NAME} -c
+scripts/qrb5165/voxl-configure-tflite:echo -e "Select a model to use with the tflite-server:\n"
+scripts/qrb5165/voxl-configure-tflite:options=("Mobilenet - object detection"
+scripts/qrb5165/voxl-configure-tflite:         "FastDepth - monocular depth estimation"
+scripts/qrb5165/voxl-configure-tflite:         "Deeplab - cityscapes segmentation"
+scripts/qrb5165/voxl-configure-tflite:         "EfficientNet - image classification"
+scripts/qrb5165/voxl-configure-tflite:         "Posenet - pose estimation"
+scripts/qrb5165/voxl-configure-tflite:         "Yolov5 - object detection"
+scripts/qrb5165/voxl-configure-tflite:         "Yolov8 - object detection (coco dataset)"
+scripts/qrb5165/voxl-configure-tflite:         "Yolov8 - object detection (custom)"
+scripts/qrb5165/voxl-configure-tflite:		 "Yolov11 - object detection (coco dataset)")
+scripts/qrb5165/voxl-configure-tflite:            set_param_string model "/usr/bin/dnn/lite-model_efficientnet_lite4_uint8_2.tflite"
+scripts/qrb5165/voxl-configure-tflite:            set_param_string model "/usr/bin/dnn/lite-model_movenet_singlepose_lightning_tflite_float16_4.tflite"
+scripts/qrb5165/voxl-configure-tflite:            read -p "Enter the name of the custom YOLOv8 model (.tflite): " custom_model_path
+scripts/qrb5165/voxl-configure-tflite:            read -p "Enter the name the custom labels file(.txt): " custom_labels_file
+scripts/qrb5165/voxl-configure-tflite:echo "Labels directory: ${labels:-N/A}"
+scripts/qrb5165/voxl-configure-tflite:echo -e "Select an image sensor to use with the tflite-server:\n (1) Hires\n (2) Tracking\n (3) Front Stereo (left cam only)\n (4) Rear Stereo (left cam only)\n"
+src/model_helper/generic_classification_model_helper.cpp:    this->tensor_offset = tensor_offset;
+src/model_helper/generic_classification_model_helper.cpp:            exit(-1);
+src/model_helper/generic_classification_model_helper.cpp:    new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
+src/model_helper/generic_classification_model_helper.cpp:    pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata,
+src/model_helper/generic_classification_model_helper.cpp:    // int tensor_offset = params->tensor_offset;
+src/model_helper/generic_classification_model_helper.cpp:        interpreter->tensor(interpreter->outputs()[0]);
+src/model_helper/generic_classification_model_helper.cpp:    int best_class = std::max_element(confidences.begin(), confidences.end()) -
+src/model_helper/generic_classification_model_helper.cpp:            ((rc_nanos_monotonic_time() - start_time) / 1000000.);
+misc_files/usr/bin/dnn/coco_labels.txt:11  ???-11
+misc_files/usr/bin/dnn/coco_labels.txt:28  ???-28
+misc_files/usr/bin/dnn/coco_labels.txt:29  ???-29
+misc_files/usr/bin/dnn/coco_labels.txt:44  ???-44
+misc_files/usr/bin/dnn/coco_labels.txt:65  ???-65
+misc_files/usr/bin/dnn/coco_labels.txt:67  ???-67
+misc_files/usr/bin/dnn/coco_labels.txt:68  ???-68
+misc_files/usr/bin/dnn/coco_labels.txt:70  ???-70
+misc_files/usr/bin/dnn/coco_labels.txt:82  ???-82
+misc_files/usr/bin/dnn/imagenet_labels.txt:2  great white shark, white shark, sman-eater, man-eating shark, Carcharodon carcharias,
+misc_files/usr/bin/dnn/imagenet_labels.txt:31  tree frog, tree-frog,
+misc_files/usr/bin/dnn/imagenet_labels.txt:53  ringneck snake, ring-necked snake, ring snake,
+misc_files/usr/bin/dnn/imagenet_labels.txt:89  sulphur-crested cockatoo, Kakatoe galerita, Cacatua galerita,
+misc_files/usr/bin/dnn/imagenet_labels.txt:98  red-breasted merganser, Mergus serrator,
+misc_files/usr/bin/dnn/imagenet_labels.txt:103  platypus, duckbill, duckbilled platypus, duck-billed platypus, Ornithorhynchus anatinus,
+misc_files/usr/bin/dnn/imagenet_labels.txt:116  chiton, coat-of-mail shell, sea cradle, polyplacophore,
+misc_files/usr/bin/dnn/imagenet_labels.txt:140  red-backed sandpiper, dunlin, Erolia alpina,
+misc_files/usr/bin/dnn/imagenet_labels.txt:155  Shih-Tzu,
+misc_files/usr/bin/dnn/imagenet_labels.txt:165  black-and-tan coonhound,
+misc_files/usr/bin/dnn/imagenet_labels.txt:188  wire-haired fox terrier,
+misc_files/usr/bin/dnn/imagenet_labels.txt:202  soft-coated wheaten terrier,
+misc_files/usr/bin/dnn/imagenet_labels.txt:205  flat-coated retriever,
+misc_files/usr/bin/dnn/imagenet_labels.txt:206  curly-coated retriever,
+misc_files/usr/bin/dnn/imagenet_labels.txt:210  German short-haired pointer,
+misc_files/usr/bin/dnn/imagenet_labels.txt:254  pug, pug-dog,
+misc_files/usr/bin/dnn/imagenet_labels.txt:303  long-horned beetle, longicorn, longicorn beetle,
+misc_files/usr/bin/dnn/imagenet_labels.txt:359  black-footed ferret, ferret, Mustela nigripes,
+misc_files/usr/bin/dnn/imagenet_labels.txt:364  three-toed sloth, ai, Bradypus tridactylus,
+misc_files/usr/bin/dnn/imagenet_labels.txt:383  Madagascar cat, ring-tailed lemur, Lemur catta,
+misc_files/usr/bin/dnn/imagenet_labels.txt:412  ashcan, trash can, garbage can, wastebin, ash bin, ash-bin, ashbin, dustbin, trash barrel, trash bin,
+misc_files/usr/bin/dnn/imagenet_labels.txt:444  bicycle-built-for-two, tandem bicycle, tandem,
+misc_files/usr/bin/dnn/imagenet_labels.txt:445  bikini, two-piece,
+misc_files/usr/bin/dnn/imagenet_labels.txt:446  binder, ring-binder,
+misc_files/usr/bin/dnn/imagenet_labels.txt:457  bow tie, bow-tie, bowtie,
+misc_files/usr/bin/dnn/imagenet_labels.txt:476  carousel, carrousel, merry-go-round, roundabout, whirligig,
+misc_files/usr/bin/dnn/imagenet_labels.txt:515  cowboy hat, ten-gallon hat,
+misc_files/usr/bin/dnn/imagenet_labels.txt:564  four-poster,
+misc_files/usr/bin/dnn/imagenet_labels.txt:573  go-kart,
+misc_files/usr/bin/dnn/imagenet_labels.txt:577  gong, tam-tam,
+misc_files/usr/bin/dnn/imagenet_labels.txt:590  hand-held computer, hand-held microcomputer,
+misc_files/usr/bin/dnn/imagenet_labels.txt:603  horse cart, horse-cart,
+misc_files/usr/bin/dnn/imagenet_labels.txt:607  jack-o-lantern,
+misc_files/usr/bin/dnn/imagenet_labels.txt:610  jersey, T-shirt, tee shirt,
+misc_files/usr/bin/dnn/imagenet_labels.txt:671  mountain bike, all-terrain bike, off-roader,
+misc_files/usr/bin/dnn/imagenet_labels.txt:688  oscilloscope, scope, cathode-ray oscilloscope, CRO,
+misc_files/usr/bin/dnn/imagenet_labels.txt:707  pay-phone, pay-station,
+misc_files/usr/bin/dnn/imagenet_labels.txt:722  ping-pong ball,
+misc_files/usr/bin/dnn/imagenet_labels.txt:763  revolver, six-gun, six-shooter,
+misc_files/usr/bin/dnn/imagenet_labels.txt:788  shoe shop, shoe-shop, shoe store,
+misc_files/usr/bin/dnn/imagenet_labels.txt:800  slot, one-armed bandit,
+misc_files/usr/bin/dnn/imagenet_labels.txt:833  submarine, pigboat, sub, U-boat,
+misc_files/usr/bin/dnn/imagenet_labels.txt:896  washbasin, handbasin, washbowl, lavabo, wash-hand basin,
+misc_files/usr/bin/dnn/imagenet_labels.txt:912  worm fence, snake fence, snake-rail fence, Virginia fence,
+misc_files/usr/bin/dnn/imagenet_labels.txt:972  cliff, drop, drop-off,
+misc_files/usr/bin/dnn/imagenet_labels.txt:978  seashore, coast, seacoast, sea-coast,
+misc_files/usr/bin/dnn/imagenet_labels.txt:986  yellow ladys slipper, yellow lady-slipper, Cypripedium calceolus, Cypripedium parviflorum,
+misc_files/usr/bin/dnn/imagenet_labels.txt:996  hen-of-the-woods, hen of the woods, Polyporus frondosus, Grifola frondosa,

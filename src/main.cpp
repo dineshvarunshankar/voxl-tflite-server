@@ -106,6 +106,8 @@ int main(int argc, char *argv[])
     pthread_attr_init(&thread_attributes);
     pthread_attr_setdetachstate(&thread_attributes, PTHREAD_CREATE_JOINABLE);
 
+    printf("initialized the thread \n");
+
     InferenceWorkerArgs *args = new InferenceWorkerArgs;
     args->model_helper = model_helper;
 
@@ -130,6 +132,8 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    printf("main 1 \n");
+
     if (!allow_multiple)
     {
         // open our output pipes using default names
@@ -146,7 +150,6 @@ int main(int argc, char *argv[])
             pipe_server_create(DETECTION_CH, detection_pipe, 0);
         }
     }
-
     else
     {
         // set up a string to hold our custom pipe name
@@ -185,6 +188,9 @@ int main(int argc, char *argv[])
         }
     }
 
+    printf("main 2 \n");
+
+
     while (main_running)
     {
         usleep(5000000);
@@ -198,7 +204,7 @@ int main(int argc, char *argv[])
     model_helper->cond_var.notify_all();
     pthread_join(model_helper->thread, NULL);
 
-    delete (model_helper);
+    delete model_helper;
     return 0;
 }
 
@@ -222,6 +228,7 @@ static void _camera_helper_cb(__attribute__((unused)) int ch,
                               camera_image_metadata_t meta, char *frame,
                               void *context)
 {
+    printf("inside the camera helper cb\n");
     static int n_skipped = 0;
     if (n_skipped < skip_n_frames)
     {
@@ -302,7 +309,7 @@ static void initialize_model_settings(char *model, char *delegate, ModelName *mo
     else if (!strcmp(model, "/usr/bin/dnn/fastdepth_float16_quant.tflite"))
     {
         *model_name = FAST_DEPTH;
-        *model_category = OBJECT_DETECTION;
+        *model_category = MONO_DEPTH;
         *norm_type = HARD_DIVISION;
     }
     else if (!strcmp(model,
