@@ -27,7 +27,8 @@ DeepLabModelHelper::DeepLabModelHelper(char *model_file, char *labels_file,
 
 bool DeepLabModelHelper::worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params)
 {
-    new_frame_metadata = new_frame->metadata;
+    // new_frame_metadata = new_frame->metadata;
+
     // Segmentation is a special case here
     // instead of passing the full dimension "output_image", we pass the
     // preprocessed_image back then, the model output and overlay image
@@ -36,19 +37,44 @@ bool DeepLabModelHelper::worker(cv::Mat &output_image, double last_inference_tim
     // passing output_image but it will not be used since preprocessed_image is already
     // a class member
 
-    if (!postprocess(output_image, last_inference_time, input_params))
+    printf("size of preprocessed image: %d, %d\n", preprocessed_image->rows, preprocessed_image->cols);
+    printf("new frame, width: %d\n", new_frame->metadata.width);
+    printf("new frame, height: %d\n", new_frame->metadata.height);
+    printf("new frame, size_bytes: %d\n", new_frame->metadata.size_bytes);
+    printf("new frame, stride: %d\n", new_frame->metadata.stride);
+    printf("new frame, exposure_ns: %d\n", new_frame->metadata.exposure_ns);
+    printf("new frame, gain: %d\n", new_frame->metadata.gain);
+    printf("new frame, format: %d\n", new_frame->metadata.format);
+    printf("new frame, framerate: %d\n", new_frame->metadata.framerate);
+    printf("new frame, reserved: %d\n", new_frame->metadata.reserved);
+    printf("\n\n");
+
+    if (!postprocess(output_image, last_inference_time, new_frame))
         return false;
 
+    printf("size of postprocessed image: %d, %d\n", preprocessed_image->rows, preprocessed_image->cols);
+    printf("new frame, width: %d\n", new_frame->metadata.width);
+    printf("new frame, height: %d\n", new_frame->metadata.height);
+    printf("new frame, size_bytes: %d\n", new_frame->metadata.size_bytes);
+    printf("new frame, stride: %d\n", new_frame->metadata.stride);
+    printf("new frame, exposure_ns: %d\n", new_frame->metadata.exposure_ns);
+    printf("new frame, gain: %d\n", new_frame->metadata.gain);
+    printf("new frame, format: %d\n", new_frame->metadata.format);
+    printf("new frame, framerate: %d\n", new_frame->metadata.framerate);
+    printf("new frame, reserved: %d\n", new_frame->metadata.reserved);
+
     new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
+
     pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata,
                                    (char *)preprocessed_image->data);
     return true;
 }
 
-bool DeepLabModelHelper::postprocess(cv::Mat &output_image, double last_inference_time, void *input_params)
+bool DeepLabModelHelper::postprocess(cv::Mat& output_image, double last_inference_time, void *input_params)
 {
     // DeepLabModelParams *params = static_cast<DeepLabModelParams *>(input_params);
     // camera_image_metadata_t &meta = params->meta;
+    TFLiteMessage *new_frame = static_cast<TFLiteMessage*>(input_params);
 
     start_time = rc_nanos_monotonic_time();
 
@@ -86,11 +112,11 @@ bool DeepLabModelHelper::postprocess(cv::Mat &output_image, double last_inferenc
     }
 
     // now, setup metadata since we modified the output image
-    new_frame_metadata.format = IMAGE_FORMAT_RGB;
-    new_frame_metadata.width = model_width + right_pixel_border;
-    new_frame_metadata.height = model_height;
-    new_frame_metadata.stride = new_frame_metadata.width * 3;
-    new_frame_metadata.size_bytes = new_frame_metadata.height * new_frame_metadata.width * 3;
+    new_frame->metadata.format = IMAGE_FORMAT_RGB;
+    new_frame->metadata.width = model_width + right_pixel_border;
+    new_frame->metadata.height = model_height;
+    new_frame->metadata.stride = new_frame->metadata.width * 3;
+    new_frame->metadata.size_bytes = new_frame->metadata.height * new_frame->metadata.width * 3;
 
     draw_fps(*preprocessed_image, last_inference_time, cv::Point(0, 0), 0.25, 0.4,
              cv::Scalar(0, 0, 0), cv::Scalar(180, 180, 180), true);
