@@ -77,7 +77,7 @@ ModelHelper *create_model_helper(ModelName model_name,
         }
         else
         {
-            fprintf(stderr, "Unsupported category for the given model\n", model_category);
+            fprintf(stderr, "Unsupported category for the given model\n");
         }
         break;
     }
@@ -139,7 +139,6 @@ ModelHelper::ModelHelper(char *model_file, char *labels_file,
                          DelegateOpt delegate_choice, bool _en_debug,
                          bool _en_timing, NormalizationType _do_normalize)
 {
-    printf("beginning of model helper\n");
     // Set the member variables
     en_debug = _en_debug;
     en_timing = _en_timing;

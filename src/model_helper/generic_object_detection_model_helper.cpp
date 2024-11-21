@@ -20,7 +20,6 @@ GenericObjectDetectionModelHelper::GenericObjectDetectionModelHelper(char *model
 
 bool GenericObjectDetectionModelHelper::worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params)
 {
-    printf("generic prcoess params null: %d \n", input_params == nullptr);
     if (!postprocess(output_image, last_inference_time, input_params))
         return false;
 

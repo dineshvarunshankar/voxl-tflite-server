@@ -50,7 +50,6 @@ void *inference_worker(void *args)
 
     while (main_running)
     {
-        printf("inside main running interfence handler \n");
         if (queue_index == model_helper->camera_queue.insert_idx)
         {
             std::unique_lock<std::mutex> lock(model_helper->cond_mutex);
@@ -58,14 +57,13 @@ void *inference_worker(void *args)
 
             continue;
         }
-        printf("main running inference handler 1 \n");
+
         // grab the frame and bump our queue index, making sure its within queue
         // size
         TFLiteMessage *new_frame = &model_helper->camera_queue.queue[queue_index];
         queue_index = ((queue_index + 1) % QUEUE_SIZE);
 
         cv::Mat preprocessed_image, output_image;
-        printf("main running inference handler 2 \n");
 
         if (!model_helper->preprocess_image(new_frame->metadata, (char *)new_frame->image_pixels, preprocessed_image, output_image))
             continue;
@@ -74,7 +72,6 @@ void *inference_worker(void *args)
         int new_format = new_frame->metadata.format;
 
         double last_inference_time = 0;
-        printf("main running inference handler 3 \n");
 
         if (!model_helper->run_inference(preprocessed_image, &last_inference_time))
         {
@@ -82,14 +79,10 @@ void *inference_worker(void *args)
         }
 
         new_frame->metadata.format = new_format;
-        printf("main running inference handler 4 \n");
-        // printf("inference_handler.cpp, FastDepthModuleParams new equal to null %d", params == nullptr);
 
         // sets up post processing and related operations 
         model_helper->worker(output_image, last_inference_time, new_frame);
-        printf("main running inference handler 5 \n");
     
-        printf("end of main running interfence handler \n");
     }
 
     delete worker_args;

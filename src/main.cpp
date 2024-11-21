@@ -106,8 +106,6 @@ int main(int argc, char *argv[])
     pthread_attr_init(&thread_attributes);
     pthread_attr_setdetachstate(&thread_attributes, PTHREAD_CREATE_JOINABLE);
 
-    printf("initialized the thread \n");
-
     InferenceWorkerArgs *args = new InferenceWorkerArgs;
     args->model_helper = model_helper;
 
@@ -131,8 +129,6 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Failed to open pipe: %s\n", input_pipe);
         return -1;
     }
-
-    printf("main 1 \n");
 
     if (!allow_multiple)
     {
@@ -188,9 +184,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    printf("main 2 \n");
-
-
     while (main_running)
     {
         usleep(5000000);
@@ -204,7 +197,7 @@ int main(int argc, char *argv[])
     model_helper->cond_var.notify_all();
     pthread_join(model_helper->thread, NULL);
 
-    delete model_helper;
+    delete (model_helper);
     return 0;
 }
 
@@ -228,7 +221,6 @@ static void _camera_helper_cb(__attribute__((unused)) int ch,
                               camera_image_metadata_t meta, char *frame,
                               void *context)
 {
-    printf("inside the camera helper cb\n");
     static int n_skipped = 0;
     if (n_skipped < skip_n_frames)
     {
