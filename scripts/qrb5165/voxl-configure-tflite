@@ -255,7 +255,7 @@ select opt in "${options[@]}" "Quit"; do
             break;;
         8)
             # For custom model
-            read -p "Enter the name of the custom YOLOv8 model (.tflite): " custom_model_path
+            read -p "Enter the name of the custom YOLOv8 model (.tflite): " custom_model_file
             read -p "Enter the name the custom labels file(.txt): " custom_labels_file
 
 			custom_model_path="/usr/bin/dnn/$custom_model_file"
