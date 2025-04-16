@@ -7,7 +7,7 @@ set(CMAKE_C_FLAGS "-std=gnu99 -Wno-unused-parameter -Wall -Wextra -Wuninitialize
 	-Wunused-variable -Wdouble-promotion -Wmissing-prototypes \
 	-Wmissing-declarations -Werror=undef -Wno-unused-function ${CMAKE_C_FLAGS}")
 
-set(CMAKE_CXX_FLAGS "-std=gnu++11 -std=c++11 -Wno-unused-parameter -Wall -Wextra -Wuninitialized -Wno-attributes \
+set(CMAKE_CXX_FLAGS "-std=gnu++11 -std=c++17 -Wno-unused-parameter -Wall -Wextra -Wuninitialized -Wno-attributes \
     -Wunused-variable -Wno-double-promotion -Wno-missing-field-initializers \
     -Werror=undef -Wno-unused-function ${CMAKE_CXX_FLAGS}")
 
