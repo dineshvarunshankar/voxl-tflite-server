@@ -18,7 +18,7 @@ GenericObjectDetectionModelHelper::GenericObjectDetectionModelHelper(char *model
     }
 }
 
-bool GenericObjectDetectionModelHelper::worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params)
+bool GenericObjectDetectionModelHelper::worker(cv::Mat &output_image, double last_inference_time, camera_image_metadata_t metadata, void *input_params)
 {
     if (!postprocess(output_image, last_inference_time, input_params))
         return false;
@@ -30,8 +30,8 @@ bool GenericObjectDetectionModelHelper::worker(cv::Mat &output_image, double las
             pipe_server_write(DETECTION_CH, (char *)&detections_vector[i], sizeof(ai_detection_t));
         }
     }
-    new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
-    pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata, (char *)output_image.data);
+    metadata.timestamp_ns = rc_nanos_monotonic_time();
+    pipe_server_write_camera_frame(IMAGE_CH, metadata, (char *)output_image.data);
 
     return true;
 }

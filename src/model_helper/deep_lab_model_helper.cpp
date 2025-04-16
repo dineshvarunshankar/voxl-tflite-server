@@ -25,7 +25,7 @@ DeepLabModelHelper::DeepLabModelHelper(char *model_file, char *labels_file,
     }
 }
 
-bool DeepLabModelHelper::worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params)
+bool DeepLabModelHelper::worker(cv::Mat &output_image, double last_inference_time, camera_image_metadata_t metadata, void *input_params)
 {
     // Segmentation is a special case here
     // instead of passing the full dimension "output_image", we pass the
@@ -34,25 +34,27 @@ bool DeepLabModelHelper::worker(cv::Mat &output_image, double last_inference_tim
 
     // passing output_image but it will not be used since preprocessed_image is already
     // a class member
+    DeepLabModelParams* params = new DeepLabModelParams(metadata);
 
-    if (!postprocess(output_image, last_inference_time, new_frame))
+    if (!postprocess(output_image, last_inference_time, params)) {
         return false;
+    }
 
-    new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
-
-    pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata,
+    params->meta.timestamp_ns = rc_nanos_monotonic_time();
+    pipe_server_write_camera_frame(IMAGE_CH, params->meta,
                                    (char *)preprocessed_image->data);
     return true;
 }
 
 bool DeepLabModelHelper::postprocess(cv::Mat& output_image, double last_inference_time, void *input_params)
 {
-    TFLiteMessage *new_frame = static_cast<TFLiteMessage*>(input_params);
+    DeepLabModelParams* params = static_cast<DeepLabModelParams*>(input_params);
 
     start_time = rc_nanos_monotonic_time();
 
     TfLiteTensor *output_locations =
         interpreter->tensor(interpreter->outputs()[0]);
+
     int64_t *classes = TensorData<int64_t>(output_locations, 0);
 
     cv::Mat temp(model_height, model_width, CV_8UC3, cv::Scalar(0, 0, 0));
@@ -62,6 +64,7 @@ bool DeepLabModelHelper::postprocess(cv::Mat& output_image, double last_inferenc
         for (int j = 0; j < model_height; j++)
         {
             cv::Vec3b color = temp.at<cv::Vec3b>(cv::Point(j, i));
+
             color[0] = color_map[classes[(i * model_width) + j] * 3];
             color[1] = color_map[classes[(i * model_width) + j] * 3 + 1];
             color[2] = color_map[classes[(i * model_width) + j] * 3 + 2];
@@ -85,11 +88,11 @@ bool DeepLabModelHelper::postprocess(cv::Mat& output_image, double last_inferenc
     }
 
     // now, setup metadata since we modified the output image
-    new_frame->metadata.format = IMAGE_FORMAT_RGB;
-    new_frame->metadata.width = model_width + right_pixel_border;
-    new_frame->metadata.height = model_height;
-    new_frame->metadata.stride = new_frame->metadata.width * 3;
-    new_frame->metadata.size_bytes = new_frame->metadata.height * new_frame->metadata.width * 3;
+    params->meta.format = IMAGE_FORMAT_RGB;
+    params->meta.width = model_width + right_pixel_border;
+    params->meta.height = model_height;
+    params->meta.stride = params->meta.width * 3;
+    params->meta.size_bytes = params->meta.height * params->meta.width * 3;
 
     draw_fps(*preprocessed_image, last_inference_time, cv::Point(0, 0), 0.25, 0.4,
              cv::Scalar(0, 0, 0), cv::Scalar(180, 180, 180), true);
@@ -99,4 +102,5 @@ bool DeepLabModelHelper::postprocess(cv::Mat& output_image, double last_inferenc
             ((rc_nanos_monotonic_time() - start_time) / 1000000.);
 
     return true;
+
 }

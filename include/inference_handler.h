@@ -16,11 +16,27 @@
 #include "model_helper/model_helper.h"
 #include "model_helper/model_info.h"
 
+#define QUEUE_LIMIT       1
+
 struct InferenceWorkerArgs
 {
     ModelHelper *model_helper;
 };
 
-void *inference_worker(void *data);
+void *run_inference_pipeline(void *data);
+
+// Setting up three threads
+void preprocess_worker(ModelHelper *model_helper);
+void inference_worker(ModelHelper *model_helper);
+void postprocess_worker(ModelHelper *model_helper);
+
+struct PipelineData
+{
+    camera_image_metadata_t metadata;
+    std::shared_ptr<cv::Mat> preprocessed_image;
+    std::shared_ptr<cv::Mat> output_image;
+    double last_inference_time;
+};
+
 
 #endif

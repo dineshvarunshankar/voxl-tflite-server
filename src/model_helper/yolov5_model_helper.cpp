@@ -20,7 +20,7 @@ YoloV5ModelHelper::YoloV5ModelHelper(char *model_file, char *labels_file,
     }
 }
 
-bool YoloV5ModelHelper::worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params)
+bool YoloV5ModelHelper::worker(cv::Mat &output_image, double last_inference_time, camera_image_metadata_t metadata, void *input_params)
 {
     if (!postprocess(output_image, last_inference_time, input_params))
         return false;
@@ -32,8 +32,8 @@ bool YoloV5ModelHelper::worker(cv::Mat &output_image, double last_inference_time
             pipe_server_write(DETECTION_CH, (char *)&detections_vector[i], sizeof(ai_detection_t));
         }
     }
-    new_frame->metadata.timestamp_ns = rc_nanos_monotonic_time();
-    pipe_server_write_camera_frame(IMAGE_CH, new_frame->metadata, (char *)output_image.data);
+    metadata.timestamp_ns = rc_nanos_monotonic_time();
+    pipe_server_write_camera_frame(IMAGE_CH, metadata, (char *)output_image.data);
 
     return true;
 }
@@ -46,11 +46,6 @@ bool YoloV5ModelHelper::postprocess(cv::Mat &output_image, double last_inference
 
     start_time = rc_nanos_monotonic_time();
 
-    // yolo has just one fat float output tensor
-    TfLiteTensor *output_locations =
-        interpreter->tensor(interpreter->outputs()[0]);
-    float *output_tensor = TensorData<float>(output_locations, 0);
-
     if (labels.empty())
     {
         if (ReadLabelsFile(labels_location, &labels, &label_count) !=
@@ -60,6 +55,12 @@ bool YoloV5ModelHelper::postprocess(cv::Mat &output_image, double last_inference
             return false;
         }
     }
+
+    // yolo has just one fat float output tensor
+    TfLiteTensor *output_locations =
+        interpreter->tensor(interpreter->outputs()[0]);
+    float *output_tensor = TensorData<float>(output_locations, 0);
+
     std::vector<b_box> bbox_list;
 
     for (const auto &scale : kGridScaleList)

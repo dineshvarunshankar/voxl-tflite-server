@@ -115,20 +115,20 @@ public:
                 DelegateOpt delegate_choice, bool _en_debug,
                 bool _en_timing, NormalizationType _do_normalize);
 
-    // preprocess method, common across most base classes
-    virtual bool preprocess_image(camera_image_metadata_t &meta,
-                                  char *frame, cv::Mat &preprocessed_image,
-                                  cv::Mat &output_image);
+    // preprocess method, common across most sub classes
+    virtual bool preprocess(camera_image_metadata_t &meta,
+                            char *frame, std::shared_ptr<cv::Mat> preprocessed_image,
+                            std::shared_ptr<cv::Mat> output_image);
 
-    // infernece method which invokes the tflite interpreter, also commons across most 
+    // inference method which invokes the tflite interpreter, also common across most
     // classes
-    virtual bool run_inference(cv::Mat preprocessed_image,
+    virtual bool run_inference(cv::Mat &preprocessed_image,
                                double *last_inference_time);
-    
-    // post process method, almost never common across classes except for 
+
+    // post process method, almost never common across classes except for
     // a few generic methods for certain problem types.
     virtual bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params = nullptr) = 0;
-    virtual bool worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params = nullptr) = 0;
+    virtual bool worker(cv::Mat &output_image, double last_inference_time, camera_image_metadata_t metadata, void *input_params = nullptr) = 0;
     void print_summary_stats();
 
     virtual ~ModelHelper() = default;
@@ -140,14 +140,15 @@ public:
 
     TFLiteCamQueue camera_queue; // camera message queue for the thread
 
-    cv::Mat *preprocessed_image; // added here mostly for the segmenation model but could be useful elsewhere
+    std::shared_ptr<cv::Mat> preprocessed_image; // added here mostly for the segmenation model but could be useful elsewhere
+
 protected:
     // Function to setup the delegate based on selection
     void setupDelegate(DelegateOpt delegate_choice);
 };
 
 ModelHelper *create_model_helper(ModelName model_name,
-                                ModelCategory model_category,
+                                 ModelCategory model_category,
                                  DelegateOpt opt_,
                                  NormalizationType do_normalize);
 
