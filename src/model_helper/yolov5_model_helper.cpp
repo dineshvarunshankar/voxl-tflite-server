@@ -27,10 +27,9 @@ bool YoloV5ModelHelper::worker(cv::Mat &output_image, double last_inference_time
 
     if (!detections_vector.empty())
     {
-        for (unsigned int i = 0; i < detections_vector.size(); i++)
-        {
-            pipe_server_write(DETECTION_CH, (char *)&detections_vector[i], sizeof(ai_detection_t));
-        }
+        pipe_server_write(DETECTION_CH,
+            (char *)detections_vector.data(),
+            sizeof(ai_detection_t) * detections_vector.size());
     }
     metadata.timestamp_ns = rc_nanos_monotonic_time();
     pipe_server_write_camera_frame(IMAGE_CH, metadata, (char *)output_image.data);
