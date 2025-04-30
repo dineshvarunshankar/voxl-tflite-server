@@ -11,6 +11,14 @@ set(CMAKE_CXX_FLAGS "-std=gnu++11 -std=c++11 -Wno-unused-parameter -Wall -Wextra
     -Wunused-variable -Wno-double-promotion -Wno-missing-field-initializers \
     -Werror=undef -Wno-unused-function ${CMAKE_CXX_FLAGS}")
 
+
+# tell the linker not to worry about missing symbols in libraries
+# core Modal AI libraries often have a lot of dependencies and this prevents
+# higher level projects from needing to install so many dependencies at compile time
+set(CMAKE_C_FLAGS   "-Wl,--unresolved-symbols=ignore-in-shared-libs ${CMAKE_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "-Wl,--unresolved-symbols=ignore-in-shared-libs ${CMAKE_CXX_FLAGS}")
+
+
 # for VOXL, install 64-bit libraries to lib64
 set(LIB_INSTALL_DIR /usr/lib64)
 
