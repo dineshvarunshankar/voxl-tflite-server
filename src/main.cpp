@@ -78,7 +78,6 @@ int main(int argc, char *argv[])
     DelegateOpt opt_;
     NormalizationType do_normalize = NONE;
 
-
     ////////////////////////////////////////////////////////////////////////////////
     // initialize InferenceHelper
     ////////////////////////////////////////////////////////////////////////////////
@@ -109,7 +108,7 @@ int main(int argc, char *argv[])
     InferenceWorkerArgs *args = new InferenceWorkerArgs;
     args->model_helper = model_helper;
 
-    int ret = pthread_create(&(model_helper->thread), &thread_attributes, inference_worker, args);
+    int ret = pthread_create(&(model_helper->thread), &thread_attributes, run_inference_pipeline, args);
     if (ret != 0)
     {
         fprintf(stderr, "Error creating inference worker thread: %d\n", ret);
@@ -197,6 +196,7 @@ int main(int argc, char *argv[])
     model_helper->cond_var.notify_all();
     pthread_join(model_helper->thread, NULL);
 
+    delete (args);
     delete (model_helper);
     return 0;
 }
@@ -267,6 +267,8 @@ static void _camera_helper_cb(__attribute__((unused)) int ch,
     // print timing if requested
     if (en_timing)
         model_helper->print_summary_stats();
+
+    
 
     return;
 }
@@ -347,7 +349,6 @@ static void initialize_model_settings(char *model, char *delegate, ModelName *mo
         *model_name = YOLOV8;
         *model_category = OBJECT_DETECTION;
         *norm_type = HARD_DIVISION;
-
     }
     else if (!strcmp(model, "/usr/bin/dnn/yolov11n_float16.tflite"))
     {

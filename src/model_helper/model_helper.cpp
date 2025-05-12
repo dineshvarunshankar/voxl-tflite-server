@@ -12,7 +12,6 @@ ModelHelper *create_model_helper(ModelName model_name,
                                  DelegateOpt opt_,
                                  NormalizationType do_normalize)
 {
-    // Switch based on model_name and model_category
     switch (model_name)
     {
     case POSENET:
@@ -63,7 +62,7 @@ ModelHelper *create_model_helper(ModelName model_name,
             int tensor_offset = 1;
             return new GenericClassificationModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize, tensor_offset);
         }
-                else
+        else
         {
             fprintf(stderr, "Unsupported category for the given model\n");
         }
@@ -199,15 +198,14 @@ ModelHelper::ModelHelper(char *model_file, char *labels_file,
     printf("Successfully built interpreter\n");
 }
 
-bool ModelHelper::preprocess_image(camera_image_metadata_t &meta,
-                                   char *frame, cv::Mat &preprocessed_image,
-                                   cv::Mat &output_image)
+bool ModelHelper::preprocess(camera_image_metadata_t &meta,
+                             char *frame, std::shared_ptr<cv::Mat> preprocessed_image,
+                             std::shared_ptr<cv::Mat> output_image)
 {
-
     start_time = rc_nanos_monotonic_time();
     num_frames_processed++;
 
-    // initialize the resize map on first frame recieved only
+    // initialize the resize map on first frame received only
     if (num_frames_processed == 1)
     {
         mcv_init_resize_map(meta.width, meta.height, model_width, model_height,
@@ -236,12 +234,12 @@ bool ModelHelper::preprocess_image(camera_image_metadata_t &meta,
     {
         cv::Mat yuv(input_height + input_height / 2, input_width, CV_8UC1,
                     (uchar *)frame);
-        cv::cvtColor(yuv, output_image, CV_YUV2RGB_NV12);
-        mcv_resize_8uc3_image(output_image.data, resize_output, &map);
+        cv::cvtColor(yuv, *output_image, CV_YUV2RGB_NV12);
+        mcv_resize_8uc3_image(output_image->data, resize_output, &map);
         cv::Mat holder(model_height, model_width, CV_8UC3,
                        (uchar *)resize_output);
 
-        preprocessed_image = holder;
+        *preprocessed_image = holder;
         meta.format = IMAGE_FORMAT_RGB;
         meta.size_bytes = (meta.height * meta.width * 3);
         meta.stride = (meta.width * 3);
@@ -250,14 +248,15 @@ bool ModelHelper::preprocess_image(camera_image_metadata_t &meta,
     case IMAGE_FORMAT_YUV422:
     {
         cv::Mat yuv(input_height, input_width, CV_8UC2, (uchar *)frame);
-        cv::cvtColor(yuv, output_image, CV_YUV2RGB_YUYV);
+        cv::cvtColor(yuv, *output_image, CV_YUV2RGB_YUYV);
 
         // Resize to model input dimensions
-        mcv_resize_8uc3_image(output_image.data, resize_output, &map);
+        mcv_resize_8uc3_image(output_image->data, resize_output, &map);
         cv::Mat holder(model_height, model_width, CV_8UC3, (uchar *)resize_output);
 
         // Assign processed image and update meta data
-        preprocessed_image = holder;
+        *preprocessed_image = holder;
+
         meta.format = IMAGE_FORMAT_RGB;
         meta.size_bytes = (meta.height * meta.width * 3);
         meta.stride = (meta.width * 3);
@@ -269,12 +268,13 @@ bool ModelHelper::preprocess_image(camera_image_metadata_t &meta,
     {
         cv::Mat yuv(input_height + input_height / 2, input_width, CV_8UC1,
                     (uchar *)frame);
-        cv::cvtColor(yuv, output_image, CV_YUV2RGB_NV21);
-        mcv_resize_8uc3_image(output_image.data, resize_output, &map);
+        cv::cvtColor(yuv, *output_image, CV_YUV2RGB_NV21);
+        mcv_resize_8uc3_image(output_image->data, resize_output, &map);
         cv::Mat holder(model_height, model_width, CV_8UC3,
                        (uchar *)resize_output);
 
-        preprocessed_image = holder;
+        *preprocessed_image = holder;
+
         meta.format = IMAGE_FORMAT_RGB;
         meta.size_bytes = (meta.height * meta.width * 3);
         meta.stride = (meta.width * 3);
@@ -285,17 +285,17 @@ bool ModelHelper::preprocess_image(camera_image_metadata_t &meta,
         meta.format = IMAGE_FORMAT_RAW8;
     case IMAGE_FORMAT_RAW8:
     {
-        output_image =
+        *output_image =
             cv::Mat(input_height, input_width, CV_8UC1, (uchar *)frame);
 
         // resize to model input dims
-        mcv_resize_image(output_image.data, resize_output, &map);
+        mcv_resize_image(output_image->data, resize_output, &map);
 
         // stack resized input to make "3 channel" grayscale input
         cv::Mat holder(model_height, model_width, CV_8UC1,
                        (uchar *)resize_output);
         cv::Mat in[] = {holder, holder, holder};
-        cv::merge(in, 3, preprocessed_image);
+        cv::merge(in, 3, *preprocessed_image);
     }
     break;
 
@@ -361,9 +361,10 @@ void ModelHelper::setupDelegate(DelegateOpt delegate_choice)
 #endif
     break;
     }
+
 }
 
-bool ModelHelper::run_inference(cv::Mat preprocessed_image,
+bool ModelHelper::run_inference(cv::Mat &preprocessed_image,
                                 double *last_inference_time)
 {
     start_time = rc_nanos_monotonic_time();

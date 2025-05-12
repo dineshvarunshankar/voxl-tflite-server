@@ -10,12 +10,12 @@ public:
                       DelegateOpt delegate_choice, bool _en_debug,
                       bool _en_timing, NormalizationType _do_normalize);
     bool postprocess(cv::Mat &output_image, double last_inference_time, void *input_params) override;
-    bool preprocess_image(camera_image_metadata_t &meta,
-                          char *frame, cv::Mat &preprocessed_image,
-                          cv::Mat &output_image) override;
-    bool run_inference(cv::Mat preprocessed_image,
+    bool preprocess(camera_image_metadata_t &meta,
+                    char *frame, std::shared_ptr<cv::Mat> preprocessed_image,
+                    std::shared_ptr<cv::Mat> output_image);
+    bool run_inference(cv::Mat &preprocessed_image,
                        double *last_inference_time) override;
-    bool worker(cv::Mat &output_image, double last_inference_time, TFLiteMessage *new_frame, void *input_params) override;
+    bool worker(cv::Mat &output_image, double last_inference_time, camera_image_metadata_t metadata, void *input_params) override;
 
 private:
     std::vector<std::string> labels;

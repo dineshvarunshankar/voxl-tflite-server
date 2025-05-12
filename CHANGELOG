@@ -1,3 +1,8 @@
+0.4.1
+    * update input_pipe selection menu to read from valid pipe options
+0.4.0
+    * seperated inference worker to run on seperate threads
+    * created a queue to store the last inference and post processed image (default max size 1)
 0.3.9
     * bump version to fix build
 0.3.8

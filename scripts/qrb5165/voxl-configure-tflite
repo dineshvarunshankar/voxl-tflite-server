@@ -100,6 +100,21 @@ set_param_string_last () {
 	sed -E -i "/\"$var\":/c\	\"$var\":	\"$2\"" ${CONFIG_FILE}
 }
 
+## set boolean parameters in JSON (true/false, no quotes)
+set_param_bool () {
+	if [ "$#" != "2" ]; then
+		echo "set_param_bool expected 2 args"
+		exit 1
+	fi
+
+	var=$1
+	val=$2
+
+	# ensure lowercase for JSON validity (true/false)
+	val=$(echo "$val" | tr '[:upper:]' '[:lower:]')
+
+	sed -E -i "/\"$var\":/c\	\"$var\":	$val," ${CONFIG_FILE}
+}
 
 disable_service_and_exit () {
 	echo "disabling ${NAME} systemd service"
@@ -223,35 +238,47 @@ select opt in "${options[@]}" "Quit"; do
     case $REPLY in
         1)
             set_param_string model "/usr/bin/dnn/ssdlite_mobilenet_v2_coco.tflite"
+			SELECTED_MODEL="ssdlite_mobilenet_v2_coco.tflite"
 			set_param_bool requires_labels true
 			set_param_string labels "/usr/bin/dnn/coco_labels.txt"
+			SELECTED_LABELS_DIR="/usr/bin/dnn/coco_labels.txt"
             break;;
         2)
             set_param_string model "/usr/bin/dnn/fastdepth_float16_quant.tflite"
+			SELECTED_MODEL="fastdepth_float16_quant.tflite"
 			set_param_bool requires_labels false
             break;;
         3)
             set_param_string model "/usr/bin/dnn/edgetpu_deeplab_321_os32_float16_quant.tflite"
+			SELECTED_MODEL="edgetpu_deeplab_321_os32_float16_quant.tflite"
 			set_param_bool requires_labels true
 			set_param_string labels "/usr/bin/dnn/cityscapes_labels.txt"
+			SELECTED_LABELS_DIR="/usr/bin/dnn/cityscapes_labels.txt"
             break;;
         4)
             set_param_string model "/usr/bin/dnn/lite-model_efficientnet_lite4_uint8_2.tflite"
+			SELECTED_MODEL="lite-model_efficientnet_lite4_uint8_2.tflite"
 			set_param_bool requires_labels true
 			set_param_string labels "/usr/bin/dnn/imagenet_labels.txt"
+			SELECTED_LABELS_DIR="/usr/bin/dnn/imagenet_labels.txt"
             break;;
         5)
             set_param_string model "/usr/bin/dnn/lite-model_movenet_singlepose_lightning_tflite_float16_4.tflite"
+			SELECTED_MODEL="lite-model_movenet_singlepose_lightning_tflite_float16_4.tflite"
 			set_param_bool requires_labels false
             break;;
         6)
             set_param_string model "/usr/bin/dnn/yolov5_float16_quant.tflite"
+			SELECTED_MODEL="yolov5_float16_quant.tflite"
 			set_param_bool requires_labels true
 			set_param_string labels "/usr/bin/dnn/yolov5_labels.txt"
+			SELECTED_LABELS_DIR="/usr/bin/dnn/yolov5_labels.txt"
             break;;
         7)
             set_param_string model "/usr/bin/dnn/yolov8n_float16.tflite"
+			SELECTED_MODEL="yolov8n_float16.tflite"
             set_param_string labels "/usr/bin/dnn/yolov5_labels.txt"
+			SELECTED_LABELS_DIR="/usr/bin/dnn/yolov5_labels.txt"
             break;;
         8)
             # For custom model
@@ -261,12 +288,16 @@ select opt in "${options[@]}" "Quit"; do
 			custom_model_path="/usr/bin/dnn/$custom_model_file"
 			custom_labels_path="/usr/bin/dnn/$custom_labels_file"
             set_param_string model "$custom_model_path"
+			SELECTED_MODEL="$custom_model_path"
 			set_param_bool true
             set_param_string labels "$custom_labels_path"
+			SELECTED_LABELS_DIR="$custom_labels_path"
             break;;
 		9) 
             set_param_string model "/usr/bin/dnn/yolov11n_float16.tflite"
+			SELECTED_MODEL="yolov11n_float16.tflite"
             set_param_string labels "/usr/bin/dnn/yolov5_labels.txt"
+			SELECTED_LABELS_DIR="/usr/bin/dnn/yolov5_labels.txt"
 			break;;
 
         [Qq]*)
@@ -277,29 +308,35 @@ select opt in "${options[@]}" "Quit"; do
     esac
 done
 
-echo "Model selected: $model"
-echo "Labels directory: ${labels:-N/A}"
+echo "Model selected: $SELECTED_MODEL"
+echo "Labels directory: $SELECTED_LABELS_DIR"
 
 echo ""
-echo -e "Select an image sensor to use with the tflite-server:\n (1) Hires\n (2) Tracking\n (3) Front Stereo (left cam only)\n (4) Rear Stereo (left cam only)\n"
-select opt in "1" "2" "3" "4"; do
-case $opt in
-1 )
-    set_param_string input_pipe "/run/mpa/hires_small_color/"
-	break;;
-2 )
-    set_param_string input_pipe "/run/mpa/tracking/"
-	break;;
-3 )
-    set_param_string input_pipe "/run/mpa/stereo_front/"
-	break;;
-4 )
-    set_param_string input_pipe "/run/mpa/stereo_rear/"
-	break;;
-*)
-	echo "invalid option"
-	esac
+echo "Detecting available image pipes..."
+# Fetch and filter valid pipes
+pipes=($(voxl-list-pipes -t camera_image_metadata_t | grep -Ev 'lepton|feat_overlay|ov_overlay|tflite'))
+
+# Check if any valid pipes found
+if [ ${#pipes[@]} -eq 0 ]; then
+    echo "No valid camera pipes found."
+    exit 1
+fi
+
+echo -e "Select an image sensor pipe to use with the tflite-server:\n"
+PS3="Enter the number corresponding to the image sensor: "
+
+select pipe in "${pipes[@]}" "Quit"; do
+    if [[ "$pipe" == "Quit" ]]; then
+        echo "Exiting."
+        exit 0
+    elif [[ -n "$pipe" ]]; then
+        set_param_string input_pipe "/run/mpa/$pipe/"
+        break
+    else
+        echo "Invalid option. Please try again."
+    fi
 done
+
 
 enable_service_and_exit
 # all done!
