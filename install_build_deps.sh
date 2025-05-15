@@ -12,7 +12,9 @@ DEPS_QRB5165="
 libmodal-pipe
 libmodal-json
 voxl-opencv
-qrb5165-tflite"
+qrb5165-tflite
+libwayland-dev:arm64
+libglib2.0-0:arm64"
 
 DEPS_APQ8096="
 libmodal-pipe
