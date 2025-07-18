@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.22)
 
 project(voxl-tflite-server)
 
@@ -19,8 +19,6 @@ set(CMAKE_C_FLAGS   "-Wl,--unresolved-symbols=ignore-in-shared-libs ${CMAKE_C_FL
 set(CMAKE_CXX_FLAGS "-Wl,--unresolved-symbols=ignore-in-shared-libs ${CMAKE_CXX_FLAGS}")
 
 
-# for VOXL, install 64-bit libraries to lib64
-set(LIB_INSTALL_DIR /usr/lib64)
 
 # include each subdirectory, may have others in example/ or lib/ etc
 add_subdirectory (src)

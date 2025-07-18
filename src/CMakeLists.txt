@@ -5,11 +5,10 @@ SET(TARGET voxl-tflite-server)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(BUILD_QRB5165 "Build the qrb5165 binary" OFF)
 
-if(BUILD_QRB5165)
-    add_definitions(-DBUILD_QRB5165)
-endif()
+## TODO, toolchain already provides -DPLATFORM_QRB5165
+add_definitions(-DBUILD_QRB5165)
+
 
 if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -Wall -Wuninitialized -Wmaybe-uninitialized -fno-omit-frame-pointer")
@@ -30,7 +29,7 @@ add_executable(${TARGET}
 include_directories(
     ../include/
     ..include/model_helper/
-    /usr/include/opencv4/
+    ${OpenCV_INCLUDE_DIRS}
 
     # # apq8096 SPECIFIC
     # /usr/include/tensorflow/lite/tools/make/downloads/absl/
@@ -130,13 +129,7 @@ set(RUY_LIBS
     "ruy_profiler_instrumentation"
 )
 
-set(OPENCV_LIBS
-    "opencv_core"
-    "opencv_highgui"
-    "opencv_imgproc"
-    "opencv_imgcodecs"
-    "opencv_dnn"
-)
+
 
 set(QCOM_LIBS
     "llvm-qcom"
@@ -160,7 +153,7 @@ set(LINK_LIBS
     "sync"
     "gthread-2.0"
     "pcre"
-    ${OPENCV_LIBS}
+    ${OpenCV_LIBS}
     "gsl"
     ${QCOM_LIBS}
     "rt"
@@ -176,14 +169,14 @@ set(LINK_LIBS
     ${ABSL_LIBS_2}
 )
 
-if (BUILD_QRB5165)
+# if (BUILD_QRB5165)
 set(LINK_LIBS "${LINK_LIBS}"
     "XNNPACK"
     "pthreadpool"
     "cpuinfo"
     "pthread"
 )
-endif()
+# endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-implicit-fallthrough")
 
@@ -192,8 +185,9 @@ target_link_libraries(${TARGET}
     -L/usr/lib64/
     ${LINK_LIBS}
 )
+
 # make sure everything is installed where we want
-# LIB_INSTALL_DIR comes from the parent cmake file
+# LIB_INSTALL_DIR comes from the toolchain file
 install(
 	TARGETS			${TARGET}
 	LIBRARY			DESTINATION ${LIB_INSTALL_DIR}
