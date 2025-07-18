@@ -31,9 +31,6 @@ include_directories(
     ..include/model_helper/
     ${OpenCV_INCLUDE_DIRS}
 
-    # # apq8096 SPECIFIC
-    # /usr/include/tensorflow/lite/tools/make/downloads/absl/
-    # /usr/include/tensorflow/lite/tools/make/downloads/flatbuffers/include/
 
     # qrb5165 SPECIFIC
     /usr/include/flatbuffers/include/

@@ -4,11 +4,11 @@ before_script:
 
 include:
   - project: 'voxl-public/voxl-sdk/ci-tools'
-    file: '/pipeline-configs/cross-qrb5165.yml'
-  - project: 'voxl-public/voxl-sdk/ci-tools'
-    file: '/pipeline-configs/cross-apq8096.yml'
-  - project: 'voxl-public/voxl-sdk/ci-tools'
     file: '/pipeline-configs/common.yml'
+  - project: 'voxl-public/voxl-sdk/ci-tools'
+    file: '/pipeline-configs/cross-v4-qrb5165-1.yml'
+  - project: 'voxl-public/voxl-sdk/ci-tools'
+    file: '/pipeline-configs/cross-v4-qrb5165-2.yml'
 
 variables:
     GIT_SUBMODULE_STRATEGY: recursive

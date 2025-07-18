@@ -10,10 +10,10 @@
 # sure the correct one is installed in voxl-cross.
 
 
-# TODO PUT qrb5165-tflite here!!
 DEPS="
 libmodal-json
-libmodal-pipe"
+libmodal-pipe
+qrb5165-tflite"
 
 
 
