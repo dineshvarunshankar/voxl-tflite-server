@@ -18,7 +18,8 @@ set(CMAKE_CXX_FLAGS "-std=gnu++11 -std=c++17 -Wno-unused-parameter -Wall -Wextra
 set(CMAKE_C_FLAGS   "-Wl,--unresolved-symbols=ignore-in-shared-libs ${CMAKE_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "-Wl,--unresolved-symbols=ignore-in-shared-libs ${CMAKE_CXX_FLAGS}")
 
-
+# shut up some warnings
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-implicit-fallthrough")
 
 # include each subdirectory, may have others in example/ or lib/ etc
 add_subdirectory (src)

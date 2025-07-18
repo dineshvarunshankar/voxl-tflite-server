@@ -143,7 +143,8 @@ set(QCOM_LIBS
 set(LINK_LIBS
     "modal_pipe"
     "modal_json"
-    "tensorflow-lite"
+    "/usr/lib64/libtensorflow-lite.a"
+    "/usr/lib64/libXNNPACK.a"
     "glib-2.0"
     "stdc++"
     "pthread"
@@ -167,24 +168,13 @@ set(LINK_LIBS
     "eight_bit_int_gemm"
     ${RUY_LIBS}
     ${ABSL_LIBS_2}
-)
-
-# if (BUILD_QRB5165)
-set(LINK_LIBS "${LINK_LIBS}"
-    "XNNPACK"
     "pthreadpool"
     "cpuinfo"
     "pthread"
 )
-# endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-implicit-fallthrough")
 
-target_link_libraries(${TARGET}
-    -Wl,-rpath-link,/usr/lib64/
-    -L/usr/lib64/
-    ${LINK_LIBS}
-)
+target_link_libraries(${TARGET} ${LINK_LIBS})
 
 # make sure everything is installed where we want
 # LIB_INSTALL_DIR comes from the toolchain file
