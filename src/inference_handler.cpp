@@ -47,6 +47,13 @@ void *run_inference_pipeline(void *args)
 {
     InferenceWorkerArgs *worker_args = static_cast<InferenceWorkerArgs *>(args);
 
+    // sets the queues to empty
+    std::queue<std::shared_ptr<PipelineData>> empty_queue1;
+    std::queue<std::shared_ptr<PipelineData>> empty_queue2;
+
+    preprocess_inference_queue.swap(empty_queue1);
+    inference_postprocess_queue.swap(empty_queue2);
+
     pipeline_start_time = std::chrono::high_resolution_clock::now();
 
     std::thread preprocess_thread(preprocess_worker, worker_args->model_helper);
@@ -136,7 +143,10 @@ void inference_worker(ModelHelper *model_helper)
 
         std::shared_ptr<PipelineData> pipeline_data;
         pipeline_data = preprocess_inference_queue.front();
-        preprocess_inference_queue.pop();
+
+        if (!preprocess_inference_queue.empty()) {
+            preprocess_inference_queue.pop();
+        }
 
         lock.unlock();
 
@@ -153,11 +163,11 @@ void inference_worker(ModelHelper *model_helper)
             inference_postprocess_cond.notify_one();
         }
 
-        while (preprocess_inference_queue.size() > QUEUE_LIMIT) {
+        while (preprocess_inference_queue.size() > QUEUE_LIMIT && !preprocess_inference_queue.empty()) {
             preprocess_inference_queue.pop();
         }
 
-        while (inference_postprocess_queue.size() > QUEUE_LIMIT) {
+        while (inference_postprocess_queue.size() > QUEUE_LIMIT && !inference_postprocess_queue.empty()) {
             inference_postprocess_queue.pop();
         }
 
@@ -184,7 +194,10 @@ void postprocess_worker(ModelHelper *model_helper)
 
         std::shared_ptr<PipelineData> pipeline_data;
         pipeline_data = inference_postprocess_queue.front();
-        inference_postprocess_queue.pop();
+
+        if (!inference_postprocess_queue.empty()) {
+            inference_postprocess_queue.pop();
+        }
 
         lock.unlock();
 
