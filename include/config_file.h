@@ -38,7 +38,6 @@
 #include <stdio.h>
 
 #define CHAR_BUF_SIZE 128
-#define CONFIG_FILE "/etc/modalai/voxl-tflite-server.conf"
 
 #ifdef BUILD_QRB5165
 #define CONFIG_FILE_HEADER "\
@@ -89,9 +88,10 @@ extern char output_pipe_prefix[CHAR_BUF_SIZE];
 extern char labels_in_use[CHAR_BUF_SIZE];
 extern bool en_debug;
 extern bool en_timing;
+extern char* CONFIG_FILE;
 
 
 void config_file_print(void);
-int config_file_read(void);
+int config_file_read();
 
 #endif  // end CONFIG_FILE_H

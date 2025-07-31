@@ -37,7 +37,6 @@ SERVICE_FILE="${NAME}.service"
 CONFIG_FILE="/etc/modalai/${NAME}.conf"
 USER=$(whoami)
 
-
 print_usage () {
 	echo ""
 	echo "Start wizard with prompts:"
@@ -58,64 +57,6 @@ print_usage () {
 	exit 0
 }
 
-
-## set most parameters which don't have quotes in json
-set_param () {
-	if [ "$#" != "2" ]; then
-		echo "set_param expected 2 args"
-		exit 1
-	fi
-
-	# remove quotes if they exist
-	var=$1
-	var="${var%\"}"
-	var="${var#\"}"
-	val=$2
-	val="${val%\"}"
-	val="${val#\"}"
-
-	sed -E -i "/\"$var\":/c\	\"$var\":	$val," ${CONFIG_FILE}
-}
-
-## set string parameters which need quotes in json
-set_param_string () {
-	if [ "$#" != "2" ]; then
-		echo "set_param_string expected 2 args"
-		exit 1
-	fi
-	var=$1
-	var="${var%\"}"
-	var="${var#\"}"
-	sed -E -i "/\"$var\":/c\	\"$var\":	\"$2\"," ${CONFIG_FILE}
-}
-
-set_param_string_last () {
-	if [ "$#" != "2" ]; then
-		echo "set_param_string expected 2 args"
-		exit 1
-	fi
-	var=$1
-	var="${var%\"}"
-	var="${var#\"}"
-	sed -E -i "/\"$var\":/c\	\"$var\":	\"$2\"" ${CONFIG_FILE}
-}
-
-## set boolean parameters in JSON (true/false, no quotes)
-set_param_bool () {
-	if [ "$#" != "2" ]; then
-		echo "set_param_bool expected 2 args"
-		exit 1
-	fi
-
-	var=$1
-	val=$2
-
-	# ensure lowercase for JSON validity (true/false)
-	val=$(echo "$val" | tr '[:upper:]' '[:lower:]')
-
-	sed -E -i "/\"$var\":/c\	\"$var\":	$val," ${CONFIG_FILE}
-}
-
 disable_service_and_exit () {
 	echo "disabling ${NAME} systemd service"
 	systemctl disable ${SERVICE_FILE}
@@ -128,7 +69,7 @@ disable_service_and_exit () {
 enable_service_and_exit () {
 	echo "enabling  ${NAME} systemd service"
 	systemctl enable  ${SERVICE_FILE}
-	echo "starting  ${NAME} systemd service"
+	echo "starting  ${NAME} systemd service"NAME
 	systemctl restart  ${SERVICE_FILE}
 	echo "Done configuring ${NAME}"
 	exit 0
@@ -220,123 +161,25 @@ disable )
 	esac
 done
 
-echo " "
-echo -e "Select a model to use with the tflite-server:\n"
-options=("Mobilenet - object detection"
-         "FastDepth - monocular depth estimation"
-         "Deeplab - cityscapes segmentation"
-         "EfficientNet - image classification"
-         "Posenet - pose estimation"
-         "Yolov5 - object detection"
-         "Yolov8 - object detection (coco dataset)"
-         "Yolov8 - object detection (custom)"
-		 "Yolov11 - object detection (coco dataset)")
+read -p "How many instances do you want to run?: " num_instances
+echo "You entered $num_instances"
 
-PS3="Enter the number corresponding to the model you want to select: "
+exec_start_string="/usr/bin/voxl-tflite-server"
 
-select opt in "${options[@]}" "Quit"; do
-    case $REPLY in
-        1)
-            set_param_string model "/usr/bin/dnn/ssdlite_mobilenet_v2_coco.tflite"
-			SELECTED_MODEL="ssdlite_mobilenet_v2_coco.tflite"
-			set_param_bool requires_labels true
-			set_param_string labels "/usr/bin/dnn/coco_labels.txt"
-			SELECTED_LABELS_DIR="/usr/bin/dnn/coco_labels.txt"
-            break;;
-        2)
-            set_param_string model "/usr/bin/dnn/fastdepth_float16_quant.tflite"
-			SELECTED_MODEL="fastdepth_float16_quant.tflite"
-			set_param_bool requires_labels false
-            break;;
-        3)
-            set_param_string model "/usr/bin/dnn/edgetpu_deeplab_321_os32_float16_quant.tflite"
-			SELECTED_MODEL="edgetpu_deeplab_321_os32_float16_quant.tflite"
-			set_param_bool requires_labels true
-			set_param_string labels "/usr/bin/dnn/cityscapes_labels.txt"
-			SELECTED_LABELS_DIR="/usr/bin/dnn/cityscapes_labels.txt"
-            break;;
-        4)
-            set_param_string model "/usr/bin/dnn/lite-model_efficientnet_lite4_uint8_2.tflite"
-			SELECTED_MODEL="lite-model_efficientnet_lite4_uint8_2.tflite"
-			set_param_bool requires_labels true
-			set_param_string labels "/usr/bin/dnn/imagenet_labels.txt"
-			SELECTED_LABELS_DIR="/usr/bin/dnn/imagenet_labels.txt"
-            break;;
-        5)
-            set_param_string model "/usr/bin/dnn/lite-model_movenet_singlepose_lightning_tflite_float16_4.tflite"
-			SELECTED_MODEL="lite-model_movenet_singlepose_lightning_tflite_float16_4.tflite"
-			set_param_bool requires_labels false
-            break;;
-        6)
-            set_param_string model "/usr/bin/dnn/yolov5_float16_quant.tflite"
-			SELECTED_MODEL="yolov5_float16_quant.tflite"
-			set_param_bool requires_labels true
-			set_param_string labels "/usr/bin/dnn/yolov5_labels.txt"
-			SELECTED_LABELS_DIR="/usr/bin/dnn/yolov5_labels.txt"
-            break;;
-        7)
-            set_param_string model "/usr/bin/dnn/yolov8n_float16.tflite"
-			SELECTED_MODEL="yolov8n_float16.tflite"
-            set_param_string labels "/usr/bin/dnn/yolov5_labels.txt"
-			SELECTED_LABELS_DIR="/usr/bin/dnn/yolov5_labels.txt"
-            break;;
-        8)
-            # For custom model
-            read -p "Enter the name of the custom YOLOv8 model (.tflite): " custom_model_file
-            read -p "Enter the name the custom labels file(.txt): " custom_labels_file
-
-			custom_model_path="/usr/bin/dnn/$custom_model_file"
-			custom_labels_path="/usr/bin/dnn/$custom_labels_file"
-            set_param_string model "$custom_model_path"
-			SELECTED_MODEL="$custom_model_path"
-			set_param_bool true
-            set_param_string labels "$custom_labels_path"
-			SELECTED_LABELS_DIR="$custom_labels_path"
-            break;;
-		9) 
-            set_param_string model "/usr/bin/dnn/yolov11n_float16.tflite"
-			SELECTED_MODEL="yolov11n_float16.tflite"
-            set_param_string labels "/usr/bin/dnn/yolov5_labels.txt"
-			SELECTED_LABELS_DIR="/usr/bin/dnn/yolov5_labels.txt"
-			break;;
-
-        [Qq]*)
-            echo "Quitting..."
-            exit 0;;
-        *)
-            echo "Invalid option. Please try again.";;
-    esac
-done
-
-echo "Model selected: $SELECTED_MODEL"
-echo "Labels directory: $SELECTED_LABELS_DIR"
-
-echo ""
-echo "Detecting available image pipes..."
-# Fetch and filter valid pipes
-pipes=($(voxl-list-pipes -t camera_image_metadata_t | grep -Ev 'lepton|feat_overlay|ov_overlay|tflite'))
-
-# Check if any valid pipes found
-if [ ${#pipes[@]} -eq 0 ]; then
-    echo "No valid camera pipes found."
-    exit 1
-fi
-
-echo -e "Select an image sensor pipe to use with the tflite-server:\n"
-PS3="Enter the number corresponding to the image sensor: "
-
-select pipe in "${pipes[@]}" "Quit"; do
-    if [[ "$pipe" == "Quit" ]]; then
-        echo "Exiting."
-        exit 0
-    elif [[ -n "$pipe" ]]; then
-        set_param_string input_pipe "/run/mpa/$pipe/"
-        break
-    else
-        echo "Invalid option. Please try again."
+for i in $(seq 1 $num_instances); do
+    if [ "$i" -eq 1 ]; then 
+        voxl-configure-tflite-single "/etc/modalai/${NAME}.conf"
+    else 
+        cp "/etc/modalai/${NAME}.conf" "/etc/modalai/${NAME}_${i}.conf"
+        CONFIG_FILE_i="/etc/modalai/${NAME}_${i}.conf"
+        voxl-configure-tflite-single "/etc/modalai/${NAME}_${i}.conf"
+        exec_start_string+=" \& /usr/bin/voxl-tflite-server -p $CONFIG_FILE_i"
     fi
+    echo "Iteration number: $i"
 done
 
+echo $exec_start_string
+
+sed -i "s|^ExecStart=.*|ExecStart=/bin/bash -c \"${exec_start_string}\"|" /etc/systemd/system/voxl-tflite-server.service
 
 enable_service_and_exit
-# all done!

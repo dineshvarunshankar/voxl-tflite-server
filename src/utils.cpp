@@ -53,11 +53,12 @@ bool _parse_opts(int argc, char *argv[], bool *en_debug, bool *en_timing)
                                            {"debug", no_argument, 0, 'c'},
                                            {"timing", no_argument, 0, 't'},
                                            {"help", no_argument, 0, 'h'},
-                                           {0, 0, 0}};
+                                           {"path", required_argument, 0, 'p'}, // Added long option for -p with required_argument
+                                           {0, 0, 0, 0}};
     while (1)
     {
         int option_index = 0;
-        int c = getopt_long(argc, argv, "cdtph", long_options, &option_index);
+        int c = getopt_long(argc, argv, "cdtp:h", long_options, &option_index);
 
         if (c == -1)
             break; // Detect the end of the options.
@@ -88,6 +89,11 @@ bool _parse_opts(int argc, char *argv[], bool *en_debug, bool *en_timing)
         case 'h':
             _print_usage();
             return true;
+
+        case 'p':
+            printf("Flag -p received with argument: %s\n", optarg);
+            CONFIG_FILE = optarg;
+            break;
 
         default:
             // Print the usage if there is an incorrect command line option

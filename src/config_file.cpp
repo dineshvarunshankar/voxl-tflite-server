@@ -1,5 +1,6 @@
 #include "config_file.h"
 
+char* CONFIG_FILE = NULL;
 char model[CHAR_BUF_SIZE];
 char input_pipe[CHAR_BUF_SIZE];
 char delegate[CHAR_BUF_SIZE];
@@ -28,8 +29,12 @@ void config_file_print(void)
     return;
 }
 
-int config_file_read(void)
+int config_file_read()
 {
+    printf("Config file %s\n", CONFIG_FILE);
+    if (CONFIG_FILE == NULL) {
+        CONFIG_FILE = (char*) "/etc/modalai/voxl-tflite-server.conf";
+    }
     int ret = json_make_empty_file_with_header_if_missing(CONFIG_FILE, CONFIG_FILE_HEADER);
     if (ret < 0)
         return -1;
@@ -59,7 +64,7 @@ int config_file_read(void)
     }
 
 #ifdef BUILD_QRB5165
-    json_fetch_bool_with_default(parent, "allow_multiple", (int *)&allow_multiple, 0);
+    json_fetch_bool_with_default(parent, "allow_multiple", (int *)&allow_multiple, 1);
     json_fetch_string_with_default(parent, "output_pipe_prefix", output_pipe_prefix, CHAR_BUF_SIZE, "mobilenet");
 #endif
 
