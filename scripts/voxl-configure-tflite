@@ -69,7 +69,7 @@ disable_service_and_exit () {
 enable_service_and_exit () {
 	echo "enabling  ${NAME} systemd service"
 	systemctl enable  ${SERVICE_FILE}
-	echo "starting  ${NAME} systemd service"NAME
+	echo "starting  ${NAME} systemd service"
 	systemctl restart  ${SERVICE_FILE}
 	echo "Done configuring ${NAME}"
 	exit 0
@@ -162,7 +162,6 @@ disable )
 done
 
 read -p "How many instances do you want to run?: " num_instances
-echo "You entered $num_instances"
 
 exec_start_string="/usr/bin/voxl-tflite-server"
 
@@ -175,10 +174,7 @@ for i in $(seq 1 $num_instances); do
         voxl-configure-tflite-single "/etc/modalai/${NAME}_${i}.conf"
         exec_start_string+=" \& /usr/bin/voxl-tflite-server -p $CONFIG_FILE_i"
     fi
-    echo "Iteration number: $i"
 done
-
-echo $exec_start_string
 
 sed -i "s|^ExecStart=.*|ExecStart=/bin/bash -c \"${exec_start_string}\"|" /etc/systemd/system/voxl-tflite-server.service
 
