@@ -29,7 +29,7 @@ void config_file_print(void)
     return;
 }
 
-int config_file_read()
+int config_file_read(void)
 {
     printf("Config file %s\n", CONFIG_FILE);
     if (CONFIG_FILE == NULL) {

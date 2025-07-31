@@ -91,7 +91,6 @@ bool _parse_opts(int argc, char *argv[], bool *en_debug, bool *en_timing)
             return true;
 
         case 'p':
-            printf("Flag -p received with argument: %s\n", optarg);
             CONFIG_FILE = optarg;
             break;
 
@@ -114,6 +113,9 @@ void _print_usage()
     printf(
         "-t, --timing    : enable timing output for model operations (Default: "
         "Off)\n");
+    printf(
+        "-p, --path      : Specify a configuration file default /etc/modalai/voxl-tflite-server.conf\n"
+    );
     printf("-h              : Print this help message\n");
 }
 

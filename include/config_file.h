@@ -92,6 +92,6 @@ extern char* CONFIG_FILE;
 
 
 void config_file_print(void);
-int config_file_read();
+int config_file_read(void);
 
 #endif  // end CONFIG_FILE_H
