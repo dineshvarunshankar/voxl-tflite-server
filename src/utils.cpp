@@ -53,7 +53,7 @@ bool _parse_opts(int argc, char *argv[], bool *en_debug, bool *en_timing)
                                            {"debug", no_argument, 0, 'c'},
                                            {"timing", no_argument, 0, 't'},
                                            {"help", no_argument, 0, 'h'},
-                                           {"path", required_argument, 0, 'p'}, // Added long option for -p with required_argument
+                                           {"path", required_argument, 0, 'p'},
                                            {0, 0, 0, 0}};
     while (1)
     {
