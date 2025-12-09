@@ -21,9 +21,16 @@ endif()
 # Build from all source files
 file(GLOB_RECURSE all_src_files *.c*)
 
+list(REMOVE_ITEM all_src_files "${CMAKE_CURRENT_SOURCE_DIR}/voxl-configure-tflite.c")
+
 add_executable(${TARGET}
 	${all_src_files}
 )
+
+add_executable(voxl-configure-tflite
+	"${CMAKE_CURRENT_SOURCE_DIR}/voxl-configure-tflite.c"
+)
+
 
 include_directories(
     ../include/
@@ -171,11 +178,12 @@ set(LINK_LIBS
 
 
 target_link_libraries(${TARGET} ${LINK_LIBS})
+target_link_libraries(voxl-configure-tflite ${LINK_LIBS})
 
 # make sure everything is installed where we want
 # LIB_INSTALL_DIR comes from the toolchain file
 install(
-	TARGETS			${TARGET}
+	TARGETS			${TARGET} voxl-configure-tflite
 	LIBRARY			DESTINATION ${LIB_INSTALL_DIR}
 	RUNTIME			DESTINATION /usr/bin
 	PUBLIC_HEADER	DESTINATION /usr/include
