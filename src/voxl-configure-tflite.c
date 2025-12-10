@@ -201,8 +201,7 @@ int parse_config() {
 	return 0;
 }
 
-int main(int argc, char* const argv[])
-{
+int main(int argc, char* const argv[]) {
 	if (argc == 1) {
 		int wizard_status = system("/usr/bin/voxl-configure-tflite-wizard");
 		return wizard_status;
