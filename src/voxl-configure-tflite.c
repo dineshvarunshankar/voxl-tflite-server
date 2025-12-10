@@ -43,8 +43,7 @@
 
 cJSON *root;
 
-static void _print_usage()
-{
+static void _print_usage() {
 	printf("\nvoxl-configure-tflite is a command line configuration helper for voxl-tflite-server\n");
 	printf("\nCommand line arguments are as follows:\n\n");
 	printf("-h, --help             : Print this help message\n");
@@ -59,8 +58,7 @@ static void _print_usage()
 }
 
 
-static int _parse_opts(int argc, char* const argv[], int help_only)       
-{
+static int _parse_opts(int argc, char* const argv[], int help_only) {
 	static struct option LongOptions[] =
 	{
 		{"help",          no_argument,        0, 'h'},
@@ -78,14 +76,13 @@ static int _parse_opts(int argc, char* const argv[], int help_only)
 	int status = 0;
 	int option;
 
-	while ((status == 0) && (option = getopt_long (argc, argv, "hs:m:p:d:r:l:a:o:", &LongOptions[0], &optionIndex)) != -1)
-	{
+	while ((status == 0) && (option = getopt_long (argc, argv, "hs:m:p:d:r:l:a:o:", &LongOptions[0], &optionIndex)) != -1) {
 		// Used to check if user wants help, before allocating any memory
 		if (help_only) {
-            if (option == 'h')
-                return 1;
-            else
-                continue;  
+			if (option == 'h')
+				return 1;
+			else
+				continue;  
 		}
 		else {
 			switch(option) {
@@ -138,68 +135,69 @@ static int _parse_opts(int argc, char* const argv[], int help_only)
 					break;
 					
 				case '?':
+
 				default:
 					return 1;
 			}
-		}
-		
+		}	
 	}
-
 	return status;
 }
 
 int parse_config() {
   	FILE *fp = fopen(CONFIG_PATH, "r");
-    if (fp == NULL) {
-        return 1;
-    }
+	if (fp == NULL) {
+		return 1;
+	}
 
-    fseek(fp, 0, SEEK_END);
-    long file_size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
+	fseek(fp, 0, SEEK_END);
+	long file_size = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
 
-    char *buffer = (char *) malloc(file_size + 1);
-    if (buffer == NULL) {
-        perror("Memory allocation failed");
-        fclose(fp);
-        exit(1);
-    }
-
-	if (fread(buffer, 1, file_size, fp) != (unsigned long)file_size) {
-    	perror("fread failed");
+	char *buffer = (char *) malloc(file_size + 1);
+	if (buffer == NULL) {
+		perror("Memory allocation failed");
+		fclose(fp);
 		exit(1);
 	}
 
-    buffer[file_size] = '\0';
-    fclose(fp);
+	if (fread(buffer, 1, file_size, fp) != (unsigned long)file_size) {
+		perror("fread failed");
+		exit(1);
+	}
 
-    char *start = buffer;
-    while (*start && (*start == ' ' || *start == '\t' || *start == '\n' || *start == '\r'))
-        start++;  // Skip whitespace
+	buffer[file_size] = '\0';
+	fclose(fp);
 
-    if (start[0] == '/' && start[1] == '*') {
-        start += 2; // Skip '/*'
-        char *end_comment = strstr(start, "*/");
-        if (end_comment != NULL) {
-            start = end_comment + 2; // Move past '*/'
-        }
-    }
+	char *start = buffer;
+	while (*start && (*start == ' ' || *start == '\t' || *start == '\n' || *start == '\r')) {
+		start++;  // Skip whitespace
+	}
 
-    // Skip any whitespace after the comment
-    while (*start && (*start == ' ' || *start == '\t' || *start == '\n' || *start == '\r'))
-        start++;
+	if (start[0] == '/' && start[1] == '*') {
+		start += 2; // Skip '/*'
+		char *end_comment = strstr(start, "*/");
+		if (end_comment != NULL) {
+			start = end_comment + 2; // Move past '*/'
+		}
+	}
 
-    root = cJSON_Parse(start);
-    if (root == NULL) {
-        const char *error_ptr = cJSON_GetErrorPtr();
-        if (error_ptr != NULL) {
-            fprintf(stderr, "Error before: %s\n", error_ptr);
-        }
-        free(buffer);
-        exit(1);
-    }
+	// Skip any whitespace after the comment
+	while (*start && (*start == ' ' || *start == '\t' || *start == '\n' || *start == '\r')) {
+		start++;
+	}
 
-    free(buffer);
+	root = cJSON_Parse(start);
+	if (root == NULL) {
+		const char *error_ptr = cJSON_GetErrorPtr();
+		if (error_ptr != NULL) {
+			fprintf(stderr, "Error before: %s\n", error_ptr);
+		}
+		free(buffer);
+		exit(1);
+	}
+
+	free(buffer);
 	return 0;
 }
 
@@ -208,10 +206,10 @@ int main(int argc, char* const argv[])
 	if (argc == 1) {
 		int wizard_status = system("/usr/bin/voxl-configure-tflite-wizard");
 		return wizard_status;
-    }
+	}
 
 	// Parse arguments to determine if user explicitly requested help
-	if(_parse_opts(argc, argv, 1)){
+	if (_parse_opts(argc, argv, 1)){
 		_print_usage();
 		return 0;
 	}
@@ -232,36 +230,33 @@ int main(int argc, char* const argv[])
 
 	// Parse all other arguments
 	optind = 1;
-	if(_parse_opts(argc, argv, 0)){
+	if (_parse_opts(argc, argv, 0)) {
 		_print_usage();
 		return 1;
 	}
 
 	char *json_string = cJSON_Print(root);
-    if (json_string == NULL) {
-        fprintf(stderr, "Error converting cJSON to string.\n");
-        cJSON_Delete(root);
-        return 1;
-    }
+	if (json_string == NULL) {
+		fprintf(stderr, "Error converting cJSON to string.\n");
+		cJSON_Delete(root);
+		return 1;
+	}
 
 	FILE *fp = fopen(CONFIG_PATH, "w");
-    if (fp == NULL) {
-        fprintf(stderr, "Error opening file for writing.\n");
-        free(json_string);
-        cJSON_Delete(root);
-        return 1;
-    }
+	if (fp == NULL) {
+		fprintf(stderr, "Error opening file for writing.\n");
+		free(json_string);
+		cJSON_Delete(root);
+		return 1;
+	}
 
-    fputs(json_string, fp);
+	fputs(json_string, fp);
 
-    fclose(fp);
-    free(json_string);
-    cJSON_Delete(root);
+	fclose(fp);
+	free(json_string);
+	cJSON_Delete(root);
 
-    printf("JSON data successfully written to %s\n", CONFIG_PATH);
+	printf("JSON data successfully written to %s\n", CONFIG_PATH);
 
 	return 0;
 }
-
-
-

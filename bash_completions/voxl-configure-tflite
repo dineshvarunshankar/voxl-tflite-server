@@ -2,69 +2,61 @@
 
 _voxl_configure_tflite()
 {
-    local cur prev
-    local opts=(
-        -h --help
-        -s --skip-frames
-        -m --model-path
-        -p --input-pipe
-        -d --delegate
-        -r --require-labels
-        -l --label-path
-        -a --allow-multiple
-        -o --output-prefix
-    )
+	local cur prev
+	local opts=(
+		-h --help
+		-s --skip-frames
+		-m --model-path
+		-p --input-pipe
+		-d --delegate
+		-r --require-labels
+		-l --label-path
+		-a --allow-multiple
+		-o --output-prefix
+	)
 
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    case "${prev}" in
+	case "${prev}" in
 
-        # -----------------------
-        # Files
-        # -----------------------
-        -m|--model-path|-l|--label-path)
-            COMPREPLY=( $(compgen -f -- "$cur") )
-            return 0
-            ;;
+		# Files
+		-m|--model-path|-l|--label-path)
+			COMPREPLY=( $(compgen -f -- "$cur") )
+			return 0
+			;;
 
-        # -----------------------
-        # Dynamic pipe completion
-        # -----------------------
-        -p|--input-pipe)
-            # Capture output from voxl-list-pipes
-            local pipes
-            pipes=$(voxl-list-pipes -t camera_image_metadata_t 2>/dev/null)
+		# Dynamic pipe completion
+		-p|--input-pipe)
+			# Capture output from voxl-list-pipes
+			local pipes
+			pipes=$(voxl-list-pipes -t camera_image_metadata_t 2>/dev/null)
 
-            # Convert to array safely
-            local pipe_array=()
-            while IFS= read -r line; do
-                [[ -n "$line" ]] && pipe_array+=("$line")
-            done <<< "$pipes"
+			# Convert to array safely
+			local pipe_array=()
+			while IFS= read -r line; do
+				[[ -n "$line" ]] && pipe_array+=("$line")
+			done <<< "$pipes"
 
-            COMPREPLY=( $(compgen -W "${pipe_array[*]}" -- "$cur") )
-            return 0
-            ;;
+			COMPREPLY=( $(compgen -W "${pipe_array[*]}" -- "$cur") )
+			return 0
+			;;
 
-        # -----------------------
-        # Strings (output prefix)
-        # -----------------------
-        -o|--output-prefix)
-            COMPREPLY=( $(compgen -f -- "$cur") )
-            return 0
-            ;;
+		# Strings (output prefix)
+		-o|--output-prefix)
+			COMPREPLY=( $(compgen -f -- "$cur") )
+			return 0
+			;;
 
-        # -----------------------
-        # Boolean flags
-        # -----------------------
-        -r|--require-labels|-a|--allow-multiple)
-            COMPREPLY=( $(compgen -W "true false" -- "$cur") )
-            return 0
-            ;;
-    esac
+		# Boolean flags
+		-r|--require-labels|-a|--allow-multiple)
+			COMPREPLY=( $(compgen -W "true false" -- "$cur") )
+			return 0
+			;;
+	esac
 
-    # Default: suggest flags
-    COMPREPLY=( $(compgen -W "${opts[*]}" -- "$cur") )
+	# Default: suggest flags
+	COMPREPLY=( $(compgen -W "${opts[*]}" -- "$cur") )
 }
 
 complete -F _voxl_configure_tflite voxl-configure-tflite
