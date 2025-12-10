@@ -138,7 +138,7 @@ static int _parse_opts(int argc, char* const argv[], int help_only)
 					
 				case '?':
 				default:
-					return -1;
+					return 1;
 			}
 		}
 		
@@ -150,7 +150,6 @@ static int _parse_opts(int argc, char* const argv[], int help_only)
 int parse_config() {
   	FILE *fp = fopen(CONFIG_PATH, "r");
     if (fp == NULL) {
-        perror("Error opening file");
         return 1;
     }
 
@@ -162,7 +161,7 @@ int parse_config() {
     if (buffer == NULL) {
         perror("Memory allocation failed");
         fclose(fp);
-        return 11;
+        exit(1);
     }
 	size_t bytes_read = fread(buffer, 1, file_size, fp);
     buffer[file_size] = '\0';
@@ -191,7 +190,7 @@ int parse_config() {
             fprintf(stderr, "Error before: %s\n", error_ptr);
         }
         free(buffer);
-        return 1;
+        exit(1);
     }
 
     free(buffer);
@@ -201,8 +200,7 @@ int parse_config() {
 int main(int argc, char* const argv[])
 {
 	if (argc == 1) {
-		//TODO: Enter wizard mode instead of giving help
-        _print_usage();
+		system("/usr/bin/voxl-configure-tflite-wizard"); 
         return 0;
     }
 
