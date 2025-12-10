@@ -80,11 +80,12 @@ static int _parse_opts(int argc, char* const argv[], int help_only)
 
 	while ((status == 0) && (option = getopt_long (argc, argv, "hs:m:p:d:r:l:a:o:", &LongOptions[0], &optionIndex)) != -1)
 	{
+		// Used to check if user wants help, before allocating any memory
 		if (help_only) {
             if (option == 'h')
                 return 1;
             else
-                continue;  // ignore everything else
+                continue;  
 		}
 		else {
 			switch(option) {
@@ -105,10 +106,10 @@ static int _parse_opts(int argc, char* const argv[], int help_only)
 					break;
 				
 				case 'r':
-					if (strcmp(optarg, "true") == 0) {
+					if (strcasecmp(optarg, "true") == 0) {
 						cJSON_ReplaceItemInObject(root, "requires_labels", cJSON_CreateBool(1));
 					}
-					else if (strcmp(optarg, "false") == 0) {
+					else if (strcasecmp(optarg, "false") == 0) {
 						cJSON_ReplaceItemInObject(root, "requires_labels", cJSON_CreateBool(0));
 					}
 					else {
@@ -121,10 +122,10 @@ static int _parse_opts(int argc, char* const argv[], int help_only)
 					break;
 				
 				case 'a':
-					if (strcmp(optarg, "true") == 0) {
+					if (strcasecmp(optarg, "true") == 0) {
 						cJSON_ReplaceItemInObject(root, "allow_multiple", cJSON_CreateBool(1));
 					}
-					else if (strcmp(optarg, "false") == 0) {
+					else if (strcasecmp(optarg, "false") == 0) {
 						cJSON_ReplaceItemInObject(root, "allow_multiple", cJSON_CreateBool(0));
 					}
 					else {
@@ -217,18 +218,20 @@ int main(int argc, char* const argv[])
 
 	// Parse config. If this fails, create a new cJSON root
 	if (parse_config()) {
+		printf("Parsing of %s failed. Generating new default config and applying arguments.", CONFIG_PATH);
 		root = cJSON_CreateObject();
 		cJSON_AddNumberToObject(root, "skip_n_frames", 0);
 		cJSON_AddStringToObject(root, "model", "/usr/bin/dnn/ssdlite_mobilenet_v2_coco.tflite");
-		cJSON_AddStringToObject(root, "input_pipe", "run/mpa/hires_small_color");
+		cJSON_AddStringToObject(root, "input_pipe", "/run/mpa/hires_small_color");
 		cJSON_AddStringToObject(root, "delegate", "gpu");
 		cJSON_AddBoolToObject(root, "requires_labels", 1);
-		cJSON_AddStringToObject(root, "labels", "usr/bin/dnn/coco_labels.txt");
+		cJSON_AddStringToObject(root, "labels", "/usr/bin/dnn/coco_labels.txt");
 		cJSON_AddBoolToObject(root, "allow_multiple", 1);
 		cJSON_AddStringToObject(root, "output_pipe_prefix", "mobilenet");
 	}
 
 	// Parse all other arguments
+	optind = 1;
 	if(_parse_opts(argc, argv, 0)){
 		_print_usage();
 		return 1;
