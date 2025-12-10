@@ -163,7 +163,12 @@ int parse_config() {
         fclose(fp);
         exit(1);
     }
-	size_t bytes_read = fread(buffer, 1, file_size, fp);
+
+	if (fread(buffer, 1, file_size, fp) != (unsigned long)file_size) {
+    	perror("fread failed");
+		exit(1);
+	}
+
     buffer[file_size] = '\0';
     fclose(fp);
 
@@ -200,8 +205,8 @@ int parse_config() {
 int main(int argc, char* const argv[])
 {
 	if (argc == 1) {
-		system("/usr/bin/voxl-configure-tflite-wizard"); 
-        return 0;
+		int wizard_status = system("/usr/bin/voxl-configure-tflite-wizard");
+		return wizard_status;
     }
 
 	// Parse arguments to determine if user explicitly requested help
