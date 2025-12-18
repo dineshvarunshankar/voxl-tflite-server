@@ -8,6 +8,7 @@
 #define TFLITE_IMAGE_PATH (MODAL_PIPE_DEFAULT_BASE_DIR "tflite/")
 #define TFLITE_DETECTION_PATH (MODAL_PIPE_DEFAULT_BASE_DIR "tflite_data/")
 
+const int CAMERA_CLIENT_CHANNEL = pipe_client_get_next_available_channel();
 ModelHelper *model_helper;
 
 bool en_debug = false;
@@ -16,7 +17,6 @@ char *coco_labels = (char *)"/usr/bin/dnn/coco_labels.txt";
 char *city_labels = (char *)"/usr/bin/dnn/cityscapes_labels.txt";
 char *imagenet_labels = (char *)"/usr/bin/dnn/imagenet_labels.txt";
 char *yolo_labels = (char *)"/usr/bin/dnn/yolov5_labels.txt";
-// yolov8 has the same labels for the coco dataset
 
 static void _camera_helper_cb(__attribute__((unused)) int ch,
                               camera_image_metadata_t meta, char *frame,
@@ -27,6 +27,27 @@ static void _camera_connect_cb(__attribute__((unused)) int ch,
                                __attribute__((unused)) void *context);
 static void set_delegate(DelegateOpt *opt);
 static void initialize_model_settings(char *model, char *delegate, ModelName *model_name, ModelCategory *model_category, NormalizationType *norm_type);
+
+static void control_pipe_handler(int ch, char* string, int bytes, __attribute__((unused)) void* context)
+{
+	printf("received command on channel %d bytes: %d string: \"%s\"\n", ch, bytes, string);
+
+	if (strncmp(string, "set_cam", 7) == 0) {
+
+		std::string command (string);
+		std::string new_input_pipe (command.substr(command.rfind(" ", command.size() - 2) + 1));
+		strncpy(input_pipe, new_input_pipe.c_str(), sizeof(input_pipe) - 1);
+	
+		pipe_client_close(CAMERA_CLIENT_CHANNEL);
+		if (pipe_client_open(CAMERA_CLIENT_CHANNEL, input_pipe, PROCESS_NAME,
+							CLIENT_FLAG_EN_CAMERA_HELPER, 0))
+		{
+			fprintf(stderr, "Failed to open pipe: %s\n", input_pipe);
+			exit(-1);
+		}
+	}
+	return;
+}
 
 int main(int argc, char *argv[])
 {
@@ -116,13 +137,12 @@ int main(int argc, char *argv[])
     }
 
     // fire up our camera server connection
-    int ch = pipe_client_get_next_available_channel();
 
-    pipe_client_set_connect_cb(ch, _camera_connect_cb, NULL);
-    pipe_client_set_disconnect_cb(ch, _camera_disconnect_cb, NULL);
-    pipe_client_set_camera_helper_cb(ch, _camera_helper_cb, NULL);
+    pipe_client_set_connect_cb(CAMERA_CLIENT_CHANNEL, _camera_connect_cb, NULL);
+    pipe_client_set_disconnect_cb(CAMERA_CLIENT_CHANNEL, _camera_disconnect_cb, NULL);
+    pipe_client_set_camera_helper_cb(CAMERA_CLIENT_CHANNEL, _camera_helper_cb, NULL);
 
-    if (pipe_client_open(ch, input_pipe, PROCESS_NAME,
+    if (pipe_client_open(CAMERA_CLIENT_CHANNEL, input_pipe, PROCESS_NAME,
                          CLIENT_FLAG_EN_CAMERA_HELPER, 0))
     {
         fprintf(stderr, "Failed to open pipe: %s\n", input_pipe);
@@ -142,7 +162,13 @@ int main(int argc, char *argv[])
                 "tflite_data", TFLITE_DETECTION_PATH,
                 "ai_detection_t", PROCESS_NAME,
                 16 * 1024, 0};
-            pipe_server_create(DETECTION_CH, detection_pipe, 0);
+
+			    char cont_cmds[256];
+    			snprintf(cont_cmds, 255, "%s",
+             		"set_cam");
+				pipe_server_set_control_cb(DETECTION_CH, &control_pipe_handler, NULL);
+				pipe_server_create(DETECTION_CH, detection_pipe, SERVER_FLAG_EN_CONTROL_PIPE);
+			    pipe_server_set_available_control_commands(DETECTION_CH, cont_cmds);
         }
     }
     else
@@ -178,8 +204,14 @@ int main(int argc, char *argv[])
             buf_ptr = output_pipe_holder.c_str();
 
             memcpy(detection_pipe.location, buf_ptr, MODAL_PIPE_MAX_NAME_LEN);
+			
+			char cont_cmds[256];
+    		snprintf(cont_cmds, 255, "%s",
+             	"set_cam");
 
-            pipe_server_create(DETECTION_CH, detection_pipe, 0);
+			pipe_server_set_control_cb(DETECTION_CH, &control_pipe_handler, NULL);
+            pipe_server_create(DETECTION_CH, detection_pipe, SERVER_FLAG_EN_CONTROL_PIPE);
+			pipe_server_set_available_control_commands(DETECTION_CH, cont_cmds);
         }
     }
 
