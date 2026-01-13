@@ -4,15 +4,18 @@ _voxl_configure_tflite()
 {
 	local cur prev
 	local opts=(
-		-h --help
-		-s --skip-frames
-		-m --model-path
-		-p --input-pipe
-		-d --delegate
-		-r --require-labels
-		-l --label-path
-		-a --allow-multiple
-		-o --output-prefix
+		--help
+		--config-path
+		--skip-frames
+		--model-path
+		--input-pipe
+		--delegate
+		--require-labels
+		--label-path
+		--allow-multiple
+		--output-prefix
+		--model-arch
+		--norm-type
 	)
 
 	cur="${COMP_WORDS[COMP_CWORD]}"
@@ -20,14 +23,27 @@ _voxl_configure_tflite()
 
 	case "${prev}" in
 
-		# Files
-		-m|--model-path|-l|--label-path)
+		# File paths
+		--config-path|--model-path|--label-path)
+			compopt -o nospace
 			COMPREPLY=( $(compgen -f -- "$cur") )
 			return 0
 			;;
 
+		# Model architecture options
+		--model-arch)
+			COMPREPLY=( $(compgen -W "MOBILE_NET MOBILE_NET_CLASSIFIER YOLOV5 YOLOV8 YOLOV11 EFFICIENT_NET POSENET FAST_DEPTH DEEPLAB" -- "$cur") )
+			return 0
+			;;
+
+		# Normalization type options
+		--norm-type)
+			COMPREPLY=( $(compgen -W "PIXEL_MEAN HARD_DIVISION NONE" -- "$cur") )
+			return 0
+			;;
+
 		# Dynamic pipe completion
-		-p|--input-pipe)
+		--input-pipe)
 			# Capture output from voxl-list-pipes
 			local pipes
 			pipes=$(voxl-list-pipes -t camera_image_metadata_t 2>/dev/null)
@@ -42,14 +58,19 @@ _voxl_configure_tflite()
 			return 0
 			;;
 
-		# Strings (output prefix)
-		-o|--output-prefix)
-			COMPREPLY=( $(compgen -f -- "$cur") )
+		# Delegate options
+		--delegate)
+			COMPREPLY=( $(compgen -W "gpu cpu nnapi" -- "$cur") )
+			return 0
+			;;
+
+		# String (output prefix)
+		--output-prefix)
 			return 0
 			;;
 
 		# Boolean flags
-		-r|--require-labels|-a|--allow-multiple)
+		--require-labels|--allow-multiple)
 			COMPREPLY=( $(compgen -W "true false" -- "$cur") )
 			return 0
 			;;

@@ -47,12 +47,18 @@
  * skip_n_frames       - how many frames to skip between processed frames. For 30Hz\n\
  *                         input frame rate, we recommend skipping 5 frame resulting\n\
  *                         in 5hz model output. For 30Hz/maximum output, set to 0.\n\
- * model               - which model to use. Currently support mobilenet, fastdepth,\n\
- *                         posenet, deeplab, and yolov5.\n\
+ * model               - path to .tflite model file to use.\n\
+ * model_architecture  - model architecture type. Required field.\n\
+ *                         Valid options: MOBILE_NET, MOBILE_NET_CLASSIFIER, YOLOV5,\n\
+ *                         YOLOV8, YOLOV11, EFFICIENT_NET, POSENET, FAST_DEPTH, DEEPLAB\n\
+ * norm_type           - input normalization type for the model. Required field.\n\
+ *                         Valid options: PIXEL_MEAN, HARD_DIVISION, NONE\n\
  * input_pipe          - which camera to use (tracking, hires, or stereo).\n\
  * delegate            - optional hardware acceleration: gpu, cpu, or nnapi. If\n\
  *                         the selection is invalid for the current model/hardware, \n\
  *                         will silently fall back to base cpu delegate.\n\
+ * requires_labels     - whether this model requires a labels file (true/false).\n\
+ * labels              - path to labels.txt file. Only used if requires_labels is true.\n\
  * allow_multiple      - remove process handling and allow multiple instances\n\
  *                         of voxl-tflite-server to run. Enables the ability\n\
  *                         to run multiples models simultaneously.\n\
@@ -67,15 +73,21 @@
 /**\n\
  * This file contains configuration that's specific to voxl-tflite-server.\n\
  *\n\
- * skip_n_frames      - how many frames to skip between processed frames. For 30Hz\n\
- *                        input frame rate, we recommend skipping 5 frame resulting\n\
- *                        in 5hz model output. For 30Hz/maximum output, set to 0.\n\
- * model               - which model to use. Currently support mobilenet, fastdepth,\n\
- *                         posenet, deeplab, and yolov5.\n\
- * input_pipe         - which camera to use (tracking, hires, or stereo).\n\
- * delegate           - optional hardware acceleration: gpu or cpu. If\n\
- *                        the selection is invalid for the current model/hardware, \n\
- *                        will silently fall back to base cpu delegate.\n\
+ * skip_n_frames       - how many frames to skip between processed frames. For 30Hz\n\
+ *                         input frame rate, we recommend skipping 5 frame resulting\n\
+ *                         in 5hz model output. For 30Hz/maximum output, set to 0.\n\
+ * model               - path to .tflite model file to use.\n\
+ * model_architecture  - model architecture type. Required field.\n\
+ *                         Valid options: MOBILE_NET, MOBILE_NET_CLASSIFIER, YOLOV5,\n\
+ *                         YOLOV8, YOLOV11, EFFICIENT_NET, POSENET, FAST_DEPTH, DEEPLAB\n\
+ * norm_type           - input normalization type for the model. Required field.\n\
+ *                         Valid options: PIXEL_MEAN, HARD_DIVISION, NONE\n\
+ * input_pipe          - which camera to use (tracking, hires, or stereo).\n\
+ * delegate            - optional hardware acceleration: gpu or cpu. If\n\
+ *                         the selection is invalid for the current model/hardware, \n\
+ *                         will silently fall back to base cpu delegate.\n\
+ * requires_labels     - whether this model requires a labels file (true/false).\n\
+ * labels              - path to labels.txt file. Only used if requires_labels is true.\n\
  */\n"
 #endif
 
@@ -86,6 +98,8 @@ extern int skip_n_frames;
 extern bool allow_multiple;
 extern char output_pipe_prefix[CHAR_BUF_SIZE];
 extern char labels_in_use[CHAR_BUF_SIZE];
+extern char model_architecture[CHAR_BUF_SIZE];
+extern char norm_type[CHAR_BUF_SIZE];
 extern bool en_debug;
 extern bool en_timing;
 extern char* CONFIG_FILE;

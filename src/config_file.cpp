@@ -8,6 +8,8 @@ int skip_n_frames;
 bool allow_multiple;
 char output_pipe_prefix[CHAR_BUF_SIZE];
 char labels_in_use[CHAR_BUF_SIZE];
+char model_architecture[CHAR_BUF_SIZE];
+char norm_type[CHAR_BUF_SIZE];
 
 void config_file_print(void)
 {
@@ -15,6 +17,10 @@ void config_file_print(void)
     printf("skip_n_frames:                    %d\n", skip_n_frames);
     printf("=================================================================\n");
     printf("model:                            %s\n", model);
+    printf("=================================================================\n");
+    printf("model_architecture:               %s\n", model_architecture);
+    printf("=================================================================\n");
+    printf("norm_type:                        %s\n", norm_type);
     printf("=================================================================\n");
     printf("input_pipe:                       %s\n", input_pipe);
     printf("=================================================================\n");
@@ -50,6 +56,8 @@ int config_file_read(void)
     json_fetch_string_with_default(parent, "model", model, CHAR_BUF_SIZE, "/usr/bin/dnn/ssdlite_mobilenet_v2_coco.tflite");
     json_fetch_string_with_default(parent, "input_pipe", input_pipe, CHAR_BUF_SIZE, "/run/mpa/hires_small_color/");
     json_fetch_string_with_default(parent, "delegate", delegate, CHAR_BUF_SIZE, "gpu");
+	json_fetch_string_with_default(parent, "model_architecture", model_architecture, CHAR_BUF_SIZE, "MOBILE_NET");
+	json_fetch_string_with_default(parent, "norm_type", norm_type, CHAR_BUF_SIZE, "PIXEL_MEAN");
 
     int requires_labels = 0;
     json_fetch_bool_with_default(parent, "requires_labels", &requires_labels, 1);

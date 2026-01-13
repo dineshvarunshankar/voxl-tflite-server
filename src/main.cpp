@@ -26,7 +26,8 @@ static void _camera_disconnect_cb(__attribute__((unused)) int ch,
 static void _camera_connect_cb(__attribute__((unused)) int ch,
                                __attribute__((unused)) void *context);
 static void set_delegate(DelegateOpt *opt);
-static void initialize_model_settings(char *model, char *delegate, ModelName *model_name, ModelCategory *model_category, NormalizationType *norm_type);
+static void get_model_type(char *model, ModelName *model_name, ModelCategory *model_category);
+static void get_normalization_type(char *model, NormalizationType *norm_type);
 
 static void control_pipe_handler(int ch, char* string, int bytes, __attribute__((unused)) void* context)
 {
@@ -104,7 +105,8 @@ int main(int argc, char *argv[])
     ////////////////////////////////////////////////////////////////////////////////
 
     set_delegate(&opt_);
-    initialize_model_settings(model, delegate, &model_name, &model_category, &do_normalize);
+    get_model_type(model, &model_name, &model_category);
+    get_normalization_type(model, &do_normalize);
 
     model_helper = create_model_helper(model_name, model_category, opt_, do_normalize);
 
@@ -246,7 +248,7 @@ static void _camera_connect_cb(__attribute__((unused)) int ch,
 static void _camera_disconnect_cb(__attribute__((unused)) int ch,
                                   __attribute__((unused)) void *context)
 {
-    fprintf(stderr, "Disonnected from camera server\n");
+    fprintf(stderr, "Disconnected from camera server\n");
 }
 
 static void _camera_helper_cb(__attribute__((unused)) int ch,
@@ -314,86 +316,85 @@ static void set_delegate(DelegateOpt *opt)
         *opt = NNAPI;
 }
 
-static void initialize_model_settings(char *model, char *delegate, ModelName *model_name, ModelCategory *model_category, NormalizationType *norm_type)
+static void get_model_type(char *model, ModelName *model_name, ModelCategory *model_category)
 {
-
-    // set model type
-    if (!strcmp(model, "/usr/bin/dnn/ssdlite_mobilenet_v2_coco.tflite"))
+    if (!strcasecmp(model_architecture, "MOBILE_NET"))
     {
         *model_name = MOBILE_NET;
         *model_category = OBJECT_DETECTION;
-        // funky for mobilenet, doesn't like hard division
-        *norm_type = PIXEL_MEAN;
     }
-    else if (!strcmp(model, "/usr/bin/dnn/mobilenetv1_nnapi_quant.tflite"))
-    {
-        *model_name = MOBILE_NET;
-        *model_category = OBJECT_DETECTION;
-        // funky for mobilenet, doesn't like hard division
-        *norm_type = PIXEL_MEAN;
-    }
-    else if (!strcmp(model, "/usr/bin/dnn/fastdepth_float16_quant.tflite"))
-    {
-        *model_name = FAST_DEPTH;
-        *model_category = MONO_DEPTH;
-        *norm_type = HARD_DIVISION;
-    }
-    else if (!strcmp(model,
-                     "/usr/bin/dnn/"
-                     "edgetpu_deeplab_321_os32_float16_quant.tflite"))
-    {
-        *model_name = DEEPLAB;
-        *model_category = SEGMENTATION;
-        *norm_type = NONE;
-    }
-    else if (!strcmp(model,
-                     "/usr/bin/dnn/"
-                     "lite-model_efficientnet_lite4_uint8_2.tflite"))
-    {
-        *model_name = EFFICIENT_NET;
-        *model_category = CLASSIFICATION;
-        *norm_type = PIXEL_MEAN;
-    }
-    else if (!strcmp(model,
-                     "/usr/bin/dnn/mobilenetv1_nnapi_classifier.tflite"))
+    else if (!strcasecmp(model_architecture, "MOBILE_NET_CLASSIFIER"))
     {
         *model_name = MOBILE_NET;
         *model_category = CLASSIFICATION;
-        *norm_type = PIXEL_MEAN;
     }
-    else if (!strcmp(model,
-                     "/usr/bin/dnn/"
-                     "lite-model_movenet_singlepose_lightning_tflite_float16_"
-                     "4.tflite"))
-    {
-        *model_name = POSENET;
-        *model_category = POSE;
-        *norm_type = NONE;
-    }
-    else if (!strcmp(model, "/usr/bin/dnn/yolov5_float16_quant.tflite"))
+    else if (!strcasecmp(model_architecture, "YOLOV5"))
     {
         *model_name = YOLOV5;
         *model_category = OBJECT_DETECTION;
-        *norm_type = HARD_DIVISION;
     }
-    else if (!strcmp(model, "/usr/bin/dnn/yolov8n_float16.tflite"))
+    else if (!strcasecmp(model_architecture, "YOLOV8"))
     {
         *model_name = YOLOV8;
         *model_category = OBJECT_DETECTION;
-        *norm_type = HARD_DIVISION;
     }
-    else if (!strcmp(model, "/usr/bin/dnn/yolov11n_float16.tflite"))
+    else if (!strcasecmp(model_architecture, "YOLOV11"))
     {
         *model_name = YOLOV11;
         *model_category = OBJECT_DETECTION;
-        *norm_type = HARD_DIVISION;
+    }
+    else if (!strcasecmp(model_architecture, "EFFICIENT_NET"))
+    {
+        *model_name = EFFICIENT_NET;
+        *model_category = CLASSIFICATION;
+    }
+    else if (!strcasecmp(model_architecture, "POSENET"))
+    {
+        *model_name = POSENET;
+        *model_category = POSE;
+    }
+    else if (!strcasecmp(model_architecture, "FAST_DEPTH"))
+    {
+        *model_name = FAST_DEPTH;
+        *model_category = MONO_DEPTH;
+    }
+    else if (!strcasecmp(model_architecture, "DEEPLAB"))
+    {
+        *model_name = DEEPLAB;
+        *model_category = SEGMENTATION;
     }
     else
     {
         fprintf(stderr,
-                "WARNING: Unknown model type provided! Defaulting post-process "
-                "to object detection.\n");
-        *model_name = PLACEHOLDER;
-        *model_category = OBJECT_DETECTION;
+                "ERROR: Unknown model_architecture '%s'\n"
+                "Valid options: MOBILE_NET, MOBILE_NET_CLASSIFIER, YOLOV5, YOLOV8, YOLOV11, EFFICIENT_NET, POSENET, FAST_DEPTH, DEEPLAB\n",
+                model_architecture);
+        fprintf(stderr, "Failed to parse model_architecture from config\n");
+        exit(-1);
+    }
+}
+
+static void get_normalization_type(char *model, NormalizationType *norm_type_out)
+{
+    if (!strcasecmp(norm_type, "PIXEL_MEAN"))
+    {
+        *norm_type_out = PIXEL_MEAN;
+    }
+    else if (!strcasecmp(norm_type, "HARD_DIVISION"))
+    {
+        *norm_type_out = HARD_DIVISION;
+    }
+    else if (!strcasecmp(norm_type, "NONE"))
+    {
+        *norm_type_out = NONE;
+    }
+    else
+    {
+        fprintf(stderr,
+                "ERROR: Unknown norm_type '%s'\n"
+                "Valid options: PIXEL_MEAN, HARD_DIVISION, NONE\n",
+                norm_type);
+        fprintf(stderr, "Failed to parse norm_type from config\n");
+        exit(-1);
     }
 }

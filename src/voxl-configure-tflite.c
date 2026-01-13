@@ -39,22 +39,34 @@
 #include <modal_json.h>
 #include "voxl-configure-tflite.h"
 
-#define CONFIG_PATH "/etc/modalai/voxl-tflite-server.conf"
+#define DEFAULT_CONFIG_PATH "/etc/modalai/voxl-tflite-server.conf"
 
 cJSON *root;
+char *config_path = NULL;
 
 static void _print_usage() {
 	printf("\nvoxl-configure-tflite is a command line configuration helper for voxl-tflite-server\n");
 	printf("\nCommand line arguments are as follows:\n\n");
-	printf("-h, --help             : Print this help message\n");
-	printf("-s, --skip-frames      : How many frames in between inference frames\n");
-	printf("-m, --model-path       : Full path to .tflite model file\n");
-	printf("-p, --input-pipe       : Name of input camera pipe to run inference on\n");
-	printf("-d, --delegate         : Hardware to run inference on (e.g. gpu)\n");
-	printf("-r, --require-labels   : Require labels (true/false)\n");
-	printf("-l, --label-path       : Full path to labels.txt file\n");
-	printf("-a, --allow-multiple   : Allow multiple runtime instances (true/false)\n");
-	printf("-o, --output-prefix    : Prefix for output pipe\n");
+	printf("--help             : Print this help message\n");
+	printf("--config-path      : Path to config file (default: /etc/modalai/voxl-tflite-server.conf)\n");
+	printf("--skip-frames      : How many frames in between inference frames\n");
+	printf("--model-path       : Full path to .tflite model file\n");
+	printf("--model-arch       : Model architecture (MOBILE_NET, YOLOV5, YOLOV8, etc.)\n");
+	printf("--norm-type        : Input normalization (PIXEL_MEAN, HARD_DIVISION, NONE)\n");
+	printf("--input-pipe       : Name of input camera pipe to run inference on\n");
+	printf("--delegate         : Hardware to run inference on (gpu, cpu, nnapi)\n");
+	printf("--require-labels   : Require labels (true/false)\n");
+	printf("--label-path       : Full path to labels.txt file\n");
+	printf("--allow-multiple   : Allow multiple runtime instances (true/false)\n");
+	printf("--output-prefix    : Prefix for output pipe\n");
+}
+
+static void _set_or_add_item(cJSON *object, const char *key, cJSON *item) {
+	if (cJSON_HasObjectItem(object, key)) {
+		cJSON_ReplaceItemInObject(object, key, item);
+	} else {
+		cJSON_AddItemToObject(object, key, item);
+	}
 }
 
 
@@ -62,6 +74,7 @@ static int _parse_opts(int argc, char* const argv[], int help_only) {
 	static struct option LongOptions[] =
 	{
 		{"help",          no_argument,        0, 'h'},
+		{"config-path",   required_argument,  0, 'c'},
 		{"skip-frames",   required_argument,  0, 's'},
 		{"model-path",    required_argument,  0, 'm'},
 		{"input-pipe",    required_argument,  0, 'p'},
@@ -70,44 +83,52 @@ static int _parse_opts(int argc, char* const argv[], int help_only) {
 		{"label-path",    required_argument,  0, 'l'},
 		{"allow-multiple",required_argument,  0, 'a'},
 		{"output-prefix", required_argument,  0, 'o'},
+		{"model-arch",    required_argument,  0, 'j'},
+		{"norm-type",	  required_argument,  0, 'n'},
+		{0, 0, 0, 0}
 	};
 
 	int optionIndex= 0;
 	int status = 0;
 	int option;
 
-	while ((status == 0) && (option = getopt_long (argc, argv, "hs:m:p:d:r:l:a:o:", &LongOptions[0], &optionIndex)) != -1) {
+	while ((status == 0) && (option = getopt_long (argc, argv, "", &LongOptions[0], &optionIndex)) != -1) {
 		// Used to check if user wants help, before allocating any memory
 		if (help_only) {
 			if (option == 'h')
 				return 1;
-			else
-				continue;  
+			else if (option == 'c')
+				config_path = optarg;
+			continue;
 		}
 		else {
 			switch(option) {
+				case 'c':
+					config_path = optarg;
+					break;
+
 				case 's':
-					cJSON_ReplaceItemInObject(root, "skip_n_frames", cJSON_CreateNumber(atoi(optarg)));
+					_set_or_add_item(root, "skip_n_frames", cJSON_CreateNumber(atoi(optarg)));
 					break;
 
 				case 'm':
-					cJSON_ReplaceItemInObject(root, "model", cJSON_CreateString(optarg));
+					_set_or_add_item(root, "model", cJSON_CreateString(optarg));
 					break;
 
 				case 'p':
-					cJSON_ReplaceItemInObject(root, "input_pipe", cJSON_CreateString(optarg));
+					_set_or_add_item(root, "input_pipe", cJSON_CreateString(optarg));
 					break;
 
 				case 'd':
-					cJSON_ReplaceItemInObject(root, "delegate", cJSON_CreateString(optarg));
+					_set_or_add_item(root, "delegate", cJSON_CreateString(optarg));
 					break;
 				
 				case 'r':
 					if (strcasecmp(optarg, "true") == 0) {
-						cJSON_ReplaceItemInObject(root, "requires_labels", cJSON_CreateBool(1));
+						_set_or_add_item(root, "requires_labels", cJSON_CreateBool(1));
 					}
 					else if (strcasecmp(optarg, "false") == 0) {
-						cJSON_ReplaceItemInObject(root, "requires_labels", cJSON_CreateBool(0));
+						_set_or_add_item(root, "requires_labels", cJSON_CreateBool(0));
 					}
 					else {
 						status = -1;
@@ -115,15 +136,15 @@ static int _parse_opts(int argc, char* const argv[], int help_only) {
 					break;
 
 				case 'l':
-					cJSON_ReplaceItemInObject(root, "labels", cJSON_CreateString(optarg));
+					_set_or_add_item(root, "labels", cJSON_CreateString(optarg));
 					break;
 				
 				case 'a':
 					if (strcasecmp(optarg, "true") == 0) {
-						cJSON_ReplaceItemInObject(root, "allow_multiple", cJSON_CreateBool(1));
+						_set_or_add_item(root, "allow_multiple", cJSON_CreateBool(1));
 					}
 					else if (strcasecmp(optarg, "false") == 0) {
-						cJSON_ReplaceItemInObject(root, "allow_multiple", cJSON_CreateBool(0));
+						_set_or_add_item(root, "allow_multiple", cJSON_CreateBool(0));
 					}
 					else {
 						status = -1;
@@ -131,9 +152,17 @@ static int _parse_opts(int argc, char* const argv[], int help_only) {
 					break;				
 				
 				case 'o':
-					cJSON_ReplaceItemInObject(root, "output_pipe_prefix", cJSON_CreateString(optarg));
+					_set_or_add_item(root, "output_pipe_prefix", cJSON_CreateString(optarg));
 					break;
-					
+
+				case 'j':
+					_set_or_add_item(root, "model_architecture", cJSON_CreateString(optarg));
+					break;
+
+				case 'n':
+					_set_or_add_item(root, "norm_type", cJSON_CreateString(optarg));
+					break;
+
 				case '?':
 
 				default:
@@ -145,7 +174,12 @@ static int _parse_opts(int argc, char* const argv[], int help_only) {
 }
 
 int parse_config() {
-  	FILE *fp = fopen(CONFIG_PATH, "r");
+	// Use default path if none specified
+	if (config_path == NULL) {
+		config_path = DEFAULT_CONFIG_PATH;
+	}
+
+  	FILE *fp = fopen(config_path, "r");
 	if (fp == NULL) {
 		return 1;
 	}
@@ -213,9 +247,13 @@ int main(int argc, char* const argv[]) {
 		return 0;
 	}
 
-	// Parse config. If this fails, create a new cJSON root
+	// Parse config. If this fails, create a new cJSON root with defaults
 	if (parse_config()) {
-		printf("Parsing of %s failed. Generating new default config and applying arguments.", CONFIG_PATH);
+		// Set default if not already set
+		if (config_path == NULL) {
+			config_path = DEFAULT_CONFIG_PATH;
+		}
+		printf("Parsing of %s failed. Generating new default config and applying arguments.\n", config_path);
 		root = cJSON_CreateObject();
 		cJSON_AddNumberToObject(root, "skip_n_frames", 0);
 		cJSON_AddStringToObject(root, "model", "/usr/bin/dnn/ssdlite_mobilenet_v2_coco.tflite");
@@ -241,7 +279,12 @@ int main(int argc, char* const argv[]) {
 		return 1;
 	}
 
-	FILE *fp = fopen(CONFIG_PATH, "w");
+	// Set default if not already set
+	if (config_path == NULL) {
+		config_path = DEFAULT_CONFIG_PATH;
+	}
+
+	FILE *fp = fopen(config_path, "w");
 	if (fp == NULL) {
 		fprintf(stderr, "Error opening file for writing.\n");
 		free(json_string);
@@ -255,7 +298,7 @@ int main(int argc, char* const argv[]) {
 	free(json_string);
 	cJSON_Delete(root);
 
-	printf("JSON data successfully written to %s\n", CONFIG_PATH);
+	printf("JSON data successfully written to %s\n", config_path);
 
 	return 0;
 }
