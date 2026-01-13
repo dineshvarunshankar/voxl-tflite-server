@@ -125,7 +125,7 @@ bool YoloV8ModelHelper::postprocess(cv::Mat &output_image, double last_inference
         cv::putText(output_image, labels[class_ids[idx]],
                     cv::Point(boxes[idx].x, boxes[idx].y), cv::FONT_HERSHEY_SIMPLEX, 0.8,
                     cv::Scalar(0), 2);
-        cv::rectangle(output_image, cv::Rect(boxes[idx].x, boxes[idx].y, boxes[idx].x + boxes[idx].width, boxes[idx].y + boxes[idx].height),
+        cv::rectangle(output_image, cv::Rect(boxes[idx].x, boxes[idx].y, boxes[idx].width, boxes[idx].height),
                       get_color_from_id(class_ids[idx]), 2);
 
         ai_detection_t curr_detection;
