@@ -72,7 +72,7 @@ bool GenericObjectDetectionModelHelper::postprocess(cv::Mat &output_image, doubl
         // Check for object detection confidence of 60% or more
         if (score > 0.6f)
         {
-			std::string label_text = (labels.size() > (unsigned int)detected_classes[i]) ? labels[detected_classes[i]] : std::to_string(detected_classes[i]);
+			std::string label_text = (labels.size() > (unsigned int)detected_classes[i]) ? labels[detected_classes[i]] : std::to_string((int)detected_classes[i]);
 
             if (en_debug)
             {
