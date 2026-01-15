@@ -78,7 +78,9 @@ bool YoloV5ModelHelper::postprocess(cv::Mat &output_image, double last_inference
 
     for (const auto &bbox : bbox_nms_list)
     {
-        cv::putText(output_image, labels[bbox.class_id],
+		std::string label_text = (labels.size() > (unsigned int)bbox.class_id) ? labels[bbox.class_id] : std::to_string(bbox.class_id);
+
+        cv::putText(output_image, label_text,
                     cv::Point(bbox.x, bbox.y), cv::FONT_HERSHEY_SIMPLEX, 0.8,
                     cv::Scalar(0), 2);
         cv::rectangle(output_image, cv::Rect(bbox.x, bbox.y, bbox.w, bbox.h),
@@ -90,7 +92,7 @@ bool YoloV5ModelHelper::postprocess(cv::Mat &output_image, double last_inference
         curr_detection.class_id = bbox.class_id;
         curr_detection.frame_id = num_frames_processed;
 
-        strcpy(curr_detection.class_name, labels[bbox.class_id].c_str());
+        strcpy(curr_detection.class_name, label_text.c_str());
         strcpy(curr_detection.cam, cam_name.c_str());
 
         curr_detection.class_confidence = bbox.class_conf;

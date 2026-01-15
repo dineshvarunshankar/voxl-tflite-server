@@ -50,9 +50,11 @@ bool GenericClassificationModelHelper::postprocess(cv::Mat &output_image, double
     int best_class = std::max_element(confidences.begin(), confidences.end()) -
                      confidences.begin();
 
-    fprintf(stderr, "class: %s, prob: %d\n", labels[best_class].c_str(),
+	std::string label_text = (labels.size() > (unsigned int)best_class) ? labels[best_class] : std::to_string(best_class);
+
+    fprintf(stderr, "class: %s, prob: %d\n", label_text.c_str(),
             best_prob);
-    cv::putText(output_image, labels[best_class],
+    cv::putText(output_image, label_text,
                 cv::Point(input_width / 3, 25), cv::FONT_HERSHEY_SIMPLEX, 0.8,
                 cv::Scalar(0, 255, 0), 1);
 

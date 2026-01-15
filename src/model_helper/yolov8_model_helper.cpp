@@ -87,7 +87,7 @@ bool YoloV8ModelHelper::postprocess(cv::Mat &output_image, double last_inference
     {
         float *classes_scores = new_data + 4;
 
-        cv::Mat scores(1, label_count, CV_32FC1, classes_scores);
+        cv::Mat scores(1, dimensions - 4, CV_32FC1, classes_scores);
         cv::Point class_id;
         double maxClassScore;
 
@@ -122,7 +122,9 @@ bool YoloV8ModelHelper::postprocess(cv::Mat &output_image, double last_inference
 
         int idx = nms_result[i];
 
-        cv::putText(output_image, labels[class_ids[idx]],
+        std::string label_text = (labels.size() > (unsigned int)class_ids[idx]) ? labels[class_ids[idx]] : std::to_string(class_ids[idx]);
+
+        cv::putText(output_image, label_text,
                     cv::Point(boxes[idx].x, boxes[idx].y), cv::FONT_HERSHEY_SIMPLEX, 0.8,
                     cv::Scalar(0), 2);
         cv::rectangle(output_image, cv::Rect(boxes[idx].x, boxes[idx].y, boxes[idx].width, boxes[idx].height),
@@ -136,8 +138,8 @@ bool YoloV8ModelHelper::postprocess(cv::Mat &output_image, double last_inference
         curr_detection.frame_id = num_frames_processed;
         curr_detection.detection_confidence = -1.0; // detection confidence is not a thing for yolov8
 
-        std::string class_holder = labels[class_ids[idx]].substr(
-            labels[class_ids[idx]].find(" ") + 1);
+        std::string class_holder = label_text.substr(
+            label_text.find(" ") + 1);
         class_holder.erase(
             remove_if(class_holder.begin(), class_holder.end(), isspace),
             class_holder.end());

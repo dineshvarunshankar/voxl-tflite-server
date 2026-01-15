@@ -72,10 +72,12 @@ bool GenericObjectDetectionModelHelper::postprocess(cv::Mat &output_image, doubl
         // Check for object detection confidence of 60% or more
         if (score > 0.6f)
         {
+			std::string label_text = (labels.size() > (unsigned int)detected_classes[i]) ? labels[detected_classes[i]] : std::to_string(detected_classes[i]);
+
             if (en_debug)
             {
                 printf("Detected: %s, Confidence: %6.2f\n",
-                       labels[detected_classes[i]].c_str(), (double)score);
+                       label_text.c_str(), (double)score);
             }
             int height = bottom - top;
             int width = right - left;
@@ -85,7 +87,7 @@ bool GenericObjectDetectionModelHelper::postprocess(cv::Mat &output_image, doubl
 
             cv::rectangle(output_image, rect,
                           get_color_from_id(detected_classes[i]), 2);
-            cv::putText(output_image, labels[detected_classes[i]], pt,
+            cv::putText(output_image, label_text, pt,
                         cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0), 2);
 
             // setup ai detection for this detection
@@ -95,8 +97,8 @@ bool GenericObjectDetectionModelHelper::postprocess(cv::Mat &output_image, doubl
             curr_detection.class_id = detected_classes[i];
             curr_detection.frame_id = num_frames_processed;
 
-            std::string class_holder = labels[detected_classes[i]].substr(
-                labels[detected_classes[i]].find(" ") + 1);
+            std::string class_holder = label_text.substr(
+                label_text.find(" ") + 1);
             class_holder.erase(
                 remove_if(class_holder.begin(), class_holder.end(), isspace),
                 class_holder.end());
