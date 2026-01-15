@@ -60,6 +60,12 @@ bool YoloV5ModelHelper::postprocess(cv::Mat &output_image, double last_inference
         interpreter->tensor(interpreter->outputs()[0]);
     float *output_tensor = TensorData<float>(output_locations, 0);
 
+    // Get the actual number of classes from the model output tensor shape
+    // YOLOv5 output format: [batch, num_detections, 5 + num_classes]
+    // where 5 = x, y, w, h, box_confidence
+    const auto &output_shape = output_locations->dims;
+    int model_num_classes = output_shape->data[2] - 5;
+
     std::vector<b_box> bbox_list;
 
     for (const auto &scale : kGridScaleList)
@@ -68,7 +74,7 @@ bool YoloV5ModelHelper::postprocess(cv::Mat &output_image, double last_inference
         int32_t grid_h = model_height / scale;
         float scale_x = static_cast<float>(input_width);
         float scale_y = static_cast<float>(input_height);
-        get_bbox(output_tensor, scale_x, scale_y, grid_w, grid_h, label_count,
+        get_bbox(output_tensor, scale_x, scale_y, grid_w, grid_h, model_num_classes,
                  bbox_list);
         output_tensor += grid_w * grid_h * kGridChannel * kElementNumOfAnchor;
     }
