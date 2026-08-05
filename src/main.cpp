@@ -13,6 +13,7 @@ ModelHelper *model_helper;
 
 bool en_debug = false;
 bool en_timing = false;
+static ModelCategory g_model_category;
 char *coco_labels = (char *)"/usr/bin/dnn/coco_labels.txt";
 char *city_labels = (char *)"/usr/bin/dnn/cityscapes_labels.txt";
 char *imagenet_labels = (char *)"/usr/bin/dnn/imagenet_labels.txt";
@@ -106,6 +107,7 @@ int main(int argc, char *argv[])
 
     set_delegate(&opt_);
     get_model_type(model, &model_name, &model_category);
+    g_model_category = model_category;
     get_normalization_type(model, &do_normalize);
 
     model_helper = create_model_helper(model_name, model_category, opt_, do_normalize);
@@ -172,6 +174,13 @@ int main(int argc, char *argv[])
 				pipe_server_create(DETECTION_CH, detection_pipe, SERVER_FLAG_EN_CONTROL_PIPE);
 			    pipe_server_set_available_control_commands(DETECTION_CH, cont_cmds);
         }
+        if (model_category == MONO_DEPTH)
+	{
+	    pipe_info_t disparity_pipe = {
+		    "tflite_disparity", TFLITE_DISPARITY_PATH, "camera_image_metadata_t",
+		    PROCESS_NAME, 16*1024*1024, 0};
+	    pipe_server_create(DISPARITY_CH, disparity_pipe, 0);
+	}
     }
     else
     {
@@ -191,6 +200,20 @@ int main(int argc, char *argv[])
         memcpy(image_pipe.location, buf_ptr, MODAL_PIPE_MAX_NAME_LEN);
         // create the server pipe
         pipe_server_create(IMAGE_CH, image_pipe, 0);
+	
+	if (model_category == MONO_DEPTH)
+	{
+	    pipe_info_t disparity_pipe = {
+        	"tflite_disparity", "unknown", "camera_image_metadata_t",
+        	PROCESS_NAME, 16 * 1024 * 1024, 0};
+    	    output_pipe_holder = MODAL_PIPE_DEFAULT_BASE_DIR;
+   	    output_pipe_holder.append(output_pipe_prefix);
+	    output_pipe_holder.append("_tflite_disparity");
+	    buf_ptr = output_pipe_holder.c_str();
+	    strncpy(disparity_pipe.location, buf_ptr, MODAL_PIPE_MAX_DIR_LEN - 1);
+            disparity_pipe.location[MODAL_PIPE_MAX_DIR_LEN - 1] = '\0';
+	    pipe_server_create(DISPARITY_CH, disparity_pipe, 0);
+	}
 
         if (model_category == OBJECT_DETECTION)
         {
@@ -274,13 +297,12 @@ static void _camera_helper_cb(__attribute__((unused)) int ch,
                 ch);
         return;
     }
-    if (!en_debug && !en_timing)
+    if (!en_debug && !en_timing && g_model_category != MONO_DEPTH)
     {
         if (!pipe_server_get_num_clients(IMAGE_CH) &&
             !pipe_server_get_num_clients(DETECTION_CH))
             return;
     }
-
     if (meta.size_bytes > MAX_IMAGE_SIZE)
     {
         fprintf(stderr, "Model cannot process an image with %d bytes\n",
@@ -363,11 +385,26 @@ static void get_model_type(char *model, ModelName *model_name, ModelCategory *mo
         *model_name = DEEPLAB;
         *model_category = SEGMENTATION;
     }
+    else if (!strcasecmp(model_architecture, "MIDAS_V2"))
+    {
+        *model_name = MIDAS_V2;
+        *model_category = MONO_DEPTH;
+    }
+    else if (!strcasecmp(model_architecture, "DA3"))
+    {
+        *model_name = DA3;
+        *model_category = MONO_DEPTH;
+    }
+    else if (!strcasecmp(model_architecture, "ZIP_DEPTH"))
+    {
+        *model_name = ZIP_DEPTH;
+        *model_category = MONO_DEPTH;
+    }
     else
     {
         fprintf(stderr,
                 "ERROR: Unknown model_architecture '%s'\n"
-                "Valid options: MOBILE_NET, MOBILE_NET_CLASSIFIER, YOLOV5, YOLOV8, YOLOV11, EFFICIENT_NET, POSENET, FAST_DEPTH, DEEPLAB\n",
+                "Valid options: MIDAS_V2, DA3, ZIP_DEPTH, MOBILE_NET, MOBILE_NET_CLASSIFIER, YOLOV5, YOLOV8, YOLOV11, EFFICIENT_NET, POSENET, FAST_DEPTH, DEEPLAB\n",
                 model_architecture);
         fprintf(stderr, "Failed to parse model_architecture from config\n");
         exit(-1);

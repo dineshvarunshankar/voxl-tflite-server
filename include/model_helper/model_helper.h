@@ -31,6 +31,8 @@
 
 #define DETECTION_CH 1
 #define IMAGE_CH 0
+#define DISPARITY_CH 2
+#define TFLITE_DISPARITY_PATH (MODAL_PIPE_DEFAULT_BASE_DIR "tflite_disparity/")
 #define MAX_IMAGE_SIZE 12441600
 #define QUEUE_SIZE 24 // max messages to be stored in queue
 #define NORMALIZATION_CONST 255.0f

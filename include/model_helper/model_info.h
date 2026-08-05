@@ -12,6 +12,9 @@
 
 enum ModelName
 {
+    MIDAS_V2,
+    DA3,
+    ZIP_DEPTH,
     MOBILE_NET,
     FAST_DEPTH,
     DEEPLAB,

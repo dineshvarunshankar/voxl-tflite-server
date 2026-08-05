@@ -6,6 +6,9 @@
 #include "model_helper/generic_classification_model_helper.h"
 #include "model_helper/generic_object_detection_model_helper.h"
 #include "model_helper/deep_lab_model_helper.h"
+#include "model_helper/midas_model_helper.h"
+#include "model_helper/da3_model_helper.h"
+#include "model_helper/zipdepth_model_helper.h"
 
 ModelHelper *create_model_helper(ModelName model_name,
                                  ModelCategory model_category,
@@ -117,19 +120,42 @@ ModelHelper *create_model_helper(ModelName model_name,
             fprintf(stderr, "Unsupported category for the given model\n");
         }
     }
-    // not sure about the utility of this enum
-    // might remove later
-    case PLACEHOLDER:
+    // mono_depth
+    case MIDAS_V2:
     {
-        if (model_category == OBJECT_DETECTION)
+        if (model_category == MONO_DEPTH)
         {
-            return new GenericObjectDetectionModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+            return new MidasModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
         }
         else
         {
             fprintf(stderr, "Unsupported category for the given model\n");
         }
     }
+    case DA3:
+    {
+        if (model_category == MONO_DEPTH)
+        {
+            return new Da3ModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+        }
+        else
+        {
+            fprintf(stderr, "Unsupported category for the given model\n");
+        }
+    }
+    case ZIP_DEPTH:
+    {
+        if (model_category == MONO_DEPTH)
+        {
+            return new ZipDepthModelHelper(model, labels_in_use, opt_, en_debug, en_timing, do_normalize);
+        }
+        else
+        {
+            fprintf(stderr, "Unsupported category for the given model\n");
+        }
+    }
+    case PLACEHOLDER:
+        return nullptr;
     }
     fprintf(stderr, "Unsupported model\n");
     return nullptr;
