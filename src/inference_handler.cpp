@@ -133,7 +133,10 @@ void inference_worker(ModelHelper *model_helper)
 
     while (main_running)
     {
-        postprocess_finish = false;
+        {
+            std::lock_guard<std::mutex> lock_finish(postprocess_mutex);
+            postprocess_finish = false;
+        }
         std::unique_lock<std::mutex> lock(preprocess_inference_mutex);
         preprocess_inference_cond.wait(lock, []
                                        { return !preprocess_inference_queue.empty() || !main_running; });
@@ -206,7 +209,10 @@ void postprocess_worker(ModelHelper *model_helper)
         std::shared_ptr<cv::Mat> output_image = pipeline_data->output_image;
         // sets up post processing and related operations
         if (!model_helper->worker(*output_image, pipeline_data->last_inference_time, pipeline_data->metadata)) {
-            postprocess_finish = true;
+            {
+                std::lock_guard<std::mutex> lock_finish(postprocess_mutex);
+                postprocess_finish = true;
+            }
             postprocess_cond.notify_one();
             continue;
         }
@@ -221,7 +227,10 @@ void postprocess_worker(ModelHelper *model_helper)
                 std::cout << "Current pipeline throughput: " << throughput << " frames per second" << std::endl;
             }
         }
-        postprocess_finish = true;
+        {
+            std::lock_guard<std::mutex> lock_finish(postprocess_mutex);
+            postprocess_finish = true;
+        }
         postprocess_cond.notify_one();
     }
 }
