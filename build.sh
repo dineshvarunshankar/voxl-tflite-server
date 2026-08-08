@@ -83,7 +83,7 @@ case "$1" in
 		mkdir -p build
 		cd build
 		cmake -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_QRB5165_1_64} ${OPTS} ../
-		make -j$(nproc)
+		make -j${JOBS:-$(nproc)}
 		cd ../
 		;;
 
@@ -92,7 +92,7 @@ case "$1" in
 		mkdir -p build
 		cd build
 		cmake -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_QRB5165_2_64} ${OPTS} ../
-		make -j$(nproc)
+		make -j${JOBS:-$(nproc)}
 		cd ../
 		;;
 
@@ -102,7 +102,7 @@ case "$1" in
 		mkdir -p build
 		cd build
 		cmake -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_QCS6490_64} ${OPTS}  ../
-		make -j$(nproc)
+		make -j${JOBS:-$(nproc)}
 		cd ../
 		;;
 
@@ -110,7 +110,7 @@ case "$1" in
 		mkdir -p build
 		cd build
 		cmake ${OPTS} ../
-		make -j$(nproc)
+		make -j${JOBS:-$(nproc)}
 		cd ../
 		;;
 
